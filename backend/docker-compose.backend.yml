@@ -115,8 +115,15 @@ services:
       JWT_KEY: ${JWT_KEY}
       JWT_ISSUER_URI: ${JWT_ISSUER_URI}
       JWT_CLIENT_SECRET: ${JWT_CLIENT_SECRET}
+      SERVER_PORT: 8764
     volumes:
       - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8764/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
 
   product-service:
     build:
@@ -147,8 +154,15 @@ services:
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
+      SERVER_PORT: 8767
     volumes:
       - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8767/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
 
   cart-service:
     build:
@@ -176,8 +190,15 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      SERVER_PORT: 8768
     volumes:
       - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8768/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
 
   order-service:
     build:
@@ -205,8 +226,15 @@ services:
       RABBITMQ_PORT: 5672
       RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      SERVER_PORT: 8769
     volumes:
       - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8769/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
 
   payment-service:
     build:
@@ -237,8 +265,15 @@ services:
       IYZICO_API_KEY: ${IYZICO_API_KEY}
       IYZICO_SECRET_KEY: ${IYZICO_SECRET_KEY}
       IYZICO_BASE_URL: ${IYZICO_BASE_URL}
+      SERVER_PORT: 8770
     volumes:
       - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8770/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
 
   api-gateway:
     build:
@@ -252,24 +287,31 @@ services:
       config-server:
         condition: service_healthy
       user-service:
-        condition: service_started
+        condition: service_healthy
       product-service:
-        condition: service_started
+        condition: service_healthy
       cart-service:
-        condition: service_started
+        condition: service_healthy
       order-service:
-        condition: service_started
+        condition: service_healthy
       payment-service:
-        condition: service_started
+        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: prod
       CONFIG_URI: http://config-server:8762
       EUREKA_URI: http://discovery-server:8761/eureka
       JWT_KEY: ${JWT_KEY}
+      SERVER_PORT: 8763
     volumes:
       - ./logs:/app/logs
     ports:
       - "8763:8763"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8763/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
 
   frontend:
     build:
@@ -281,7 +323,8 @@ services:
     container_name: ecommerce-frontend
     restart: unless-stopped
     depends_on:
-      - api-gateway
+      api-gateway:
+        condition: service_healthy
     ports:
       - "${FRONTEND_PORT:-80}:80"
 
