@@ -291,7 +291,7 @@ services:
     restart: unless-stopped
     command: -config.file=/etc/loki/local-config.yml
     volumes:
-      - ./deploy/loki/local-config.yml:/etc/loki/local-config.yml:ro
+      - ./deploy/loki:/etc/loki:ro
       - loki_data:/loki
     ports:
       - "127.0.0.1:3100:3100"
@@ -304,7 +304,7 @@ services:
     depends_on:
       - loki
     volumes:
-      - ./deploy/promtail/config.yml:/etc/promtail/config.yml:ro
+      - ./deploy/promtail:/etc/promtail:ro
       - ./logs:/var/log/ecommerce:ro
 
   grafana:
