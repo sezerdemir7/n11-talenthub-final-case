@@ -15,21 +15,25 @@ sudo systemctl restart jenkins
 The Jenkins user must be able to run Docker commands.
 
 If port `80` is already used by nginx/apache on the server, change
-`FRONTEND_PORT` in the root `Jenkinsfile` or in `backend/.env.example`.
+`FRONTEND_PORT` in the `.env` file uploaded to Jenkins.
 
-## Jenkins Credentials
+## Jenkins Credential
 
-Create these Jenkins Secret text credentials:
+Create one Jenkins credential:
 
 ```text
-ecommerce-postgres-password
-ecommerce-rabbitmq-password
-ecommerce-config-git-token
-ecommerce-jwt-key
-ecommerce-jwt-issuer-uri
-ecommerce-jwt-client-secret
-ecommerce-aws-access-key-id
-ecommerce-aws-secret-access-key
+Kind: Secret file
+ID: ecommerce-backend-env
+File: your production .env file
+```
+
+The uploaded `.env` file must contain all values from `backend/.env.example`,
+including Iyzico values:
+
+```text
+IYZICO_API_KEY
+IYZICO_SECRET_KEY
+IYZICO_BASE_URL
 ```
 
 ## Pipeline Setup
@@ -52,7 +56,7 @@ The pipeline does this:
 
 ```text
 checkout
-create backend/.env from Jenkins credentials
+copy Jenkins secret file to backend/.env
 validate backend/docker-compose.backend.yml
 build and deploy backend services
 build and deploy frontend nginx container
