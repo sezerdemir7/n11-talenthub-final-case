@@ -1,0 +1,327 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ecommerce-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ecommerce_user_service
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deploy/postgres/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    ports:
+      - "127.0.0.1:5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ecommerce_user_service"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: ecommerce-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  discovery-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: discovery-server
+    container_name: ecommerce-discovery-server
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      EUREKA_HOSTNAME: discovery-server
+      CONFIG_ENABLED: "false"
+    volumes:
+      - ./logs:/app/logs
+    ports:
+      - "127.0.0.1:8761:8761"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8761/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+
+  config-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: config-server
+    container_name: ecommerce-config-server
+    restart: unless-stopped
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      EUREKA_URI: http://discovery-server:8761/eureka/
+      CONFIG_GIT_URI: ${CONFIG_GIT_URI}
+      CONFIG_GIT_BRANCH: ${CONFIG_GIT_BRANCH}
+      GIT_USERNAME: ${GIT_USERNAME}
+      GIT_TOKEN: ${GIT_TOKEN}
+    volumes:
+      - ./logs:/app/logs
+    ports:
+      - "127.0.0.1:8762:8762"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8762/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+
+  user-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: user-service
+    container_name: ecommerce-user-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      CONFIG_URI: http://config-server:8762
+      EUREKA_URI: http://discovery-server:8761/eureka
+      DB_URL: jdbc:postgresql://postgres:5432/ecommerce_user_service
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      JWT_KEY: ${JWT_KEY}
+      JWT_ISSUER_URI: ${JWT_ISSUER_URI}
+      JWT_CLIENT_SECRET: ${JWT_CLIENT_SECRET}
+    volumes:
+      - ./logs:/app/logs
+
+  product-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: product-service
+    container_name: ecommerce-product-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      CONFIG_URI: http://config-server:8762
+      EUREKA_URI: http://discovery-server:8761/eureka
+      DB_URL: jdbc:postgresql://postgres:5432/ecommerce_product_service
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
+    volumes:
+      - ./logs:/app/logs
+
+  cart-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: cart-service
+    container_name: ecommerce-cart-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      CONFIG_URI: http://config-server:8762
+      EUREKA_URI: http://discovery-server:8761/eureka
+      DB_URL: jdbc:postgresql://postgres:5432/ecommerce_cart_service
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+    volumes:
+      - ./logs:/app/logs
+
+  order-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: order-service
+    container_name: ecommerce-order-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      CONFIG_URI: http://config-server:8762
+      EUREKA_URI: http://discovery-server:8761/eureka
+      DB_URL: jdbc:postgresql://postgres:5432/ecommerce_order_service
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+    volumes:
+      - ./logs:/app/logs
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: payment-service
+    container_name: ecommerce-payment-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      CONFIG_URI: http://config-server:8762
+      EUREKA_URI: http://discovery-server:8761/eureka
+      DB_URL: jdbc:postgresql://postgres:5432/ecommerce_payment_service
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+    volumes:
+      - ./logs:/app/logs
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: api-gateway
+    container_name: ecommerce-api-gateway
+    restart: unless-stopped
+    depends_on:
+      config-server:
+        condition: service_healthy
+      user-service:
+        condition: service_started
+      product-service:
+        condition: service_started
+      cart-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      payment-service:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      CONFIG_URI: http://config-server:8762
+      EUREKA_URI: http://discovery-server:8761/eureka
+      JWT_KEY: ${JWT_KEY}
+    volumes:
+      - ./logs:/app/logs
+    ports:
+      - "8763:8763"
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+        VITE_APP_NAME: ${VITE_APP_NAME:-N11 Marketplace}
+    container_name: ecommerce-frontend
+    restart: unless-stopped
+    depends_on:
+      - api-gateway
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+
+  loki:
+    image: grafana/loki:2.9.8
+    container_name: ecommerce-loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yml
+    volumes:
+      - ./deploy/loki/local-config.yml:/etc/loki/local-config.yml:ro
+      - loki_data:/loki
+    ports:
+      - "127.0.0.1:3100:3100"
+
+  promtail:
+    image: grafana/promtail:2.9.8
+    container_name: ecommerce-promtail
+    restart: unless-stopped
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    volumes:
+      - ./deploy/promtail/config.yml:/etc/promtail/config.yml:ro
+      - ./logs:/var/log/ecommerce:ro
+
+  grafana:
+    image: grafana/grafana:10.4.14
+    container_name: ecommerce-grafana
+    restart: unless-stopped
+    depends_on:
+      - loki
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "127.0.0.1:3000:3000"
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+  loki_data:
+  grafana_data:

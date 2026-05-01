@@ -1,0 +1,13 @@
+// The main pipeline lives at the repository root: ../Jenkinsfile
+// Keep this file only as a pointer for older Jenkins jobs.
+pipeline {
+    agent any
+
+    stages {
+        stage('Use root Jenkinsfile') {
+            steps {
+                error('Use the repository root Jenkinsfile as the Jenkins script path.')
+            }
+        }
+    }
+}
