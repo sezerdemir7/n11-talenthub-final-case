@@ -13,6 +13,7 @@ import com.demir.ecommerce.cartservice.exception.message.CartErrorMessage;
 import com.demir.ecommerce.cartservice.repository.CartRepository;
 import com.demir.ecommerce.cartservice.service.CartService;
 import com.demir.ecommerce.commonlib.excepption.BusinessException;
+import com.demir.ecommerce.commonlib.security.SecurityUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,7 +35,8 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public CartResponse getCart(Long userId) {
+    public CartResponse getCart() {
+        Long userId = SecurityUtils.getUserId();
 
         Cart cart = getOrCreateCart(userId);
         List<CartItem> cartItems = cart.getItems();
@@ -57,7 +59,6 @@ public class CartServiceImpl implements CartService {
         BigDecimal cartTotal = BigDecimal.ZERO;
 
         for (CartItem item : cartItems) {
-
             ProductInternalResponse product = productMap.get(item.getProductId());
 
             if (product == null || !product.active()) {
@@ -85,7 +86,8 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public void addToCart(Long userId, AddToCartRequest request) {
+    public void addToCart(AddToCartRequest request) {
+        Long userId = SecurityUtils.getUserId();
 
         if (request.quantity() <= 0) {
             throw new BusinessException(CartErrorMessage.INVALID_QUANTITY);
@@ -97,7 +99,7 @@ public class CartServiceImpl implements CartService {
         for (CartItem item : cartItems) {
             if (item.getProductId().equals(request.productId())) {
                 item.setQuantity(item.getQuantity() + request.quantity());
-                return; // dirty checking yeterli
+                return;
             }
         }
 
@@ -125,7 +127,19 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public void clearCart(Long userId) {
+    public void clearCart() {
+        Long userId = SecurityUtils.getUserId();
+
+        Cart cart = cartRepository.findByUserIdWithItems(userId)
+                .orElseThrow(() ->
+                        new BusinessException(CartErrorMessage.CART_NOT_FOUND)
+                );
+
+        cart.getItems().clear();
+    }
+    @Override
+    @Transactional
+    public void clearCartInternal(Long userId) {
 
         Cart cart = cartRepository.findByUserIdWithItems(userId)
                 .orElseThrow(() ->
@@ -135,10 +149,10 @@ public class CartServiceImpl implements CartService {
         cart.getItems().clear();
     }
 
+
     @Override
     @Transactional(readOnly = true)
     public CartInternalResponse getInternalCart(Long userId) {
-
         Cart cart = cartRepository.findByUserIdWithItems(userId)
                 .orElseThrow(() ->
                         new BusinessException(CartErrorMessage.CART_NOT_FOUND)

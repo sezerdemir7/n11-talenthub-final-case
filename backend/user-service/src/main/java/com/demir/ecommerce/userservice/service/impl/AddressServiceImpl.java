@@ -1,6 +1,7 @@
 package com.demir.ecommerce.userservice.service.impl;
 
 import com.demir.ecommerce.commonlib.excepption.BusinessException;
+import com.demir.ecommerce.commonlib.security.SecurityUtils;
 import com.demir.ecommerce.userservice.dto.address.request.AddressRequest;
 import com.demir.ecommerce.userservice.dto.address.response.AddressInternalResponse;
 import com.demir.ecommerce.userservice.dto.address.response.AddressResponse;
@@ -29,7 +30,8 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     @Transactional
-    public AddressResponse create(Long userId, AddressRequest request) {
+    public AddressResponse create(AddressRequest request) {
+        Long userId = SecurityUtils.getUserId();
 
         User user = findUserById(userId);
 
@@ -50,14 +52,14 @@ public class AddressServiceImpl implements AddressService {
             clearDefaultAddress(userId);
         }
 
-        Address savedAddress = addressRepository.save(address);
-
-        return mapToResponse(savedAddress);
+        return mapToResponse(addressRepository.save(address));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<AddressResponse> getMyAddresses(Long userId) {
+    public List<AddressResponse> getMyAddresses() {
+        Long userId = SecurityUtils.getUserId();
+
         return addressRepository.findAllByUserId(userId)
                 .stream()
                 .map(this::mapToResponse)
@@ -66,7 +68,8 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     @Transactional
-    public AddressResponse update(Long userId, Long addressId, AddressRequest request) {
+    public AddressResponse update(Long addressId, AddressRequest request) {
+        Long userId = SecurityUtils.getUserId();
 
         Address address = findAddressByIdAndUserId(addressId, userId);
 
@@ -81,35 +84,31 @@ public class AddressServiceImpl implements AddressService {
             address.setIsDefault(true);
         }
 
-        Address updatedAddress = addressRepository.save(address);
-
-        return mapToResponse(updatedAddress);
+        return mapToResponse(addressRepository.save(address));
     }
 
     @Override
     @Transactional
-    public void delete(Long userId, Long addressId) {
-
+    public void delete(Long addressId) {
+        Long userId = SecurityUtils.getUserId();
         Address address = findAddressByIdAndUserId(addressId, userId);
-
         addressRepository.delete(address);
     }
 
     @Override
     @Transactional
-    public AddressResponse setDefault(Long userId, Long addressId) {
+    public AddressResponse setDefault(Long addressId) {
+        Long userId = SecurityUtils.getUserId();
 
         Address address = findAddressByIdAndUserId(addressId, userId);
 
         clearDefaultAddress(userId);
-
         address.setIsDefault(true);
 
-        Address updatedAddress = addressRepository.save(address);
-
-        return mapToResponse(updatedAddress);
+        return mapToResponse(addressRepository.save(address));
     }
 
+    // internal — Feign ile order-service çağırır, userId dışarıdan gelir
     @Override
     @Transactional(readOnly = true)
     public AddressInternalResponse getInternalAddress(Long userId, Long addressId) {
@@ -127,6 +126,7 @@ public class AddressServiceImpl implements AddressService {
         );
     }
 
+    // -------------------------------------------------------------------------
 
     private void clearDefaultAddress(Long userId) {
         addressRepository.findAllByUserId(userId)

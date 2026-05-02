@@ -6,6 +6,7 @@ import com.demir.ecommerce.commonlib.event.order.OrderCreatedEvent;
 import com.demir.ecommerce.commonlib.event.order.OrderItemEvent;
 import com.demir.ecommerce.commonlib.excepption.BusinessException;
 import com.demir.ecommerce.commonlib.excepption.message.GeneralErrorMessage;
+import com.demir.ecommerce.commonlib.security.SecurityUtils;
 import com.demir.ecommerce.orderservice.client.CartServiceClient;
 import com.demir.ecommerce.orderservice.client.ProductServiceClient;
 import com.demir.ecommerce.orderservice.client.UserServiceClient;
@@ -50,7 +51,8 @@ public class OrderServiceImpl implements OrderService {
     public OrderServiceImpl(OrderRepository orderRepository,
                             CartServiceClient cartServiceClient,
                             ProductServiceClient productServiceClient,
-                            OrderEventPublisher orderEventPublisher, UserServiceClient userServiceClient) {
+                            OrderEventPublisher orderEventPublisher,
+                            UserServiceClient userServiceClient) {
         this.orderRepository = orderRepository;
         this.cartServiceClient = cartServiceClient;
         this.productServiceClient = productServiceClient;
@@ -58,25 +60,26 @@ public class OrderServiceImpl implements OrderService {
         this.userServiceClient = userServiceClient;
     }
 
-    // ================= GET ORDER =================
 
     @Override
     @Transactional(readOnly = true)
     public OrderResponse getOrderById(Long orderId) {
-
         Order order = orderRepository.findWithItemsById(orderId)
-                .orElseThrow(() -> new BusinessException(
-                        OrderErrorMessage.ORDER_NOT_FOUND
-                ));
+                .orElseThrow(() -> new BusinessException(OrderErrorMessage.ORDER_NOT_FOUND));
+
+        if (!SecurityUtils.isOwnerOrAdmin(order.getUserId())) {
+            throw new BusinessException(GeneralErrorMessage.ACCESS_DENIED);
+        }
 
         return mapToResponse(order);
     }
 
-    // ================= USER ORDERS (PAGINATION) =================
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<OrderResponse> getOrdersByUserId(Long userId, int page, int size) {
+    public PageResponse<OrderResponse> getOrdersByUserId(int page, int size) {
+
+        Long userId = SecurityUtils.getUserId();
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
@@ -97,16 +100,16 @@ public class OrderServiceImpl implements OrderService {
         );
     }
 
-    // ================= ORDER ITEMS (PAGINATION) =================
 
     @Override
     @Transactional(readOnly = true)
     public PageResponse<OrderItemResponse> getOrderItems(Long orderId, int page, int size) {
-
         Order order = orderRepository.findWithItemsById(orderId)
-                .orElseThrow(() -> new BusinessException(
-                        OrderErrorMessage.ORDER_NOT_FOUND
-                ));
+                .orElseThrow(() -> new BusinessException(OrderErrorMessage.ORDER_NOT_FOUND));
+
+        if (!SecurityUtils.isOwnerOrAdmin(order.getUserId())) {
+            throw new BusinessException(GeneralErrorMessage.ACCESS_DENIED);
+        }
 
         List<OrderItemResponse> items = order.getItems().stream()
                 .map(i -> new OrderItemResponse(
@@ -119,9 +122,7 @@ public class OrderServiceImpl implements OrderService {
 
         int start = Math.min(page * size, items.size());
         int end = Math.min(start + size, items.size());
-
         List<OrderItemResponse> paged = items.subList(start, end);
-
         int totalPages = (int) Math.ceil((double) items.size() / size);
 
         return PageResponse.of(
@@ -137,18 +138,14 @@ public class OrderServiceImpl implements OrderService {
     }
 
 
-
     @Override
     @Transactional
-    public void cancelOrder(Long orderId, Long userId) {
-
+    public void cancelOrder(Long orderId) {
         Order order = orderRepository.findWithItemsById(orderId)
-                .orElseThrow(() -> new BusinessException(
-                        OrderErrorMessage.ORDER_NOT_FOUND
-                ));
+                .orElseThrow(() -> new BusinessException(OrderErrorMessage.ORDER_NOT_FOUND));
 
-        if (!order.getUserId().equals(userId)) {
-            throw new BusinessException(OrderErrorMessage.INVALID_ORDER_STATUS);
+        if (!SecurityUtils.isOwnerOrAdmin(order.getUserId())) {
+            throw new BusinessException(GeneralErrorMessage.ACCESS_DENIED);
         }
 
         if (order.getStatus() != OrderStatus.CONFIRMED) {
@@ -178,32 +175,23 @@ public class OrderServiceImpl implements OrderService {
     }
 
 
-
-    // ================= CHECKOUT =================
-
     @Override
-    public OrderResponse checkout(Long userId, CheckoutRequest request) {
+    public OrderResponse checkout(CheckoutRequest request) {
+
+        Long userId = SecurityUtils.getUserId();
 
         CartInternalResponse cart = getCart(userId);
-
         Map<Long, ProductInternalResponse> productMap = getProductMap(cart);
-
         List<OrderItem> items = buildOrderItems(cart, productMap);
-
         BigDecimal totalPrice = calculateTotal(items);
-
         AddressInternalResponse address = userServiceClient.getAddress(userId, request.addressId());
-
         Order order = createWaitingPaymentOrder(userId, items, totalPrice, address);
 
-        OrderCreatedEvent event = toOrderCreatedEvent(order);
-        orderEventPublisher.publishOrderCreated(event);
+        orderEventPublisher.publishOrderCreated(toOrderCreatedEvent(order));
 
         return mapToResponse(order);
     }
 
-
-    // ================= CART =================
 
     private CartInternalResponse getCart(Long userId) {
         CartInternalResponse cart = cartServiceClient.getCart(userId);
@@ -215,46 +203,26 @@ public class OrderServiceImpl implements OrderService {
         return cart;
     }
 
-    // ================= PRODUCT =================
 
     private Map<Long, ProductInternalResponse> getProductMap(CartInternalResponse cart) {
-
         List<Long> ids = cart.items().stream()
                 .map(CartInternalItem::productId)
                 .toList();
 
-        List<ProductInternalResponse> products =
-                productServiceClient.getByIds(ids);
-
-        return products.stream()
-                .collect(Collectors.toMap(
-                        ProductInternalResponse::id,
-                        p -> p
-                ));
+        return productServiceClient.getByIds(ids).stream()
+                .collect(Collectors.toMap(ProductInternalResponse::id, p -> p));
     }
 
-    // ================= ORDER ITEMS =================
 
-    private List<OrderItem> buildOrderItems(
-            CartInternalResponse cart,
-            Map<Long, ProductInternalResponse> productMap) {
-
+    private List<OrderItem> buildOrderItems(CartInternalResponse cart,
+                                            Map<Long, ProductInternalResponse> productMap) {
         return cart.items().stream()
                 .map(ci -> {
-
                     ProductInternalResponse p = productMap.get(ci.productId());
 
-                    if (p == null) {
-                        throw new BusinessException(OrderErrorMessage.PRODUCT_NOT_FOUND);
-                    }
-
-                    if (!Boolean.TRUE.equals(p.active())) {
-                        throw new BusinessException(OrderErrorMessage.PRODUCT_INACTIVE);
-                    }
-
-                    if (p.stock() < ci.quantity()) {
-                        throw new BusinessException(OrderErrorMessage.INSUFFICIENT_STOCK);
-                    }
+                    if (p == null) throw new BusinessException(OrderErrorMessage.PRODUCT_NOT_FOUND);
+                    if (!Boolean.TRUE.equals(p.active())) throw new BusinessException(OrderErrorMessage.PRODUCT_INACTIVE);
+                    if (p.stock() < ci.quantity()) throw new BusinessException(OrderErrorMessage.INSUFFICIENT_STOCK);
 
                     OrderItem item = new OrderItem();
                     item.setProductId(p.id());
@@ -267,22 +235,18 @@ public class OrderServiceImpl implements OrderService {
                 .toList();
     }
 
-    // ================= TOTAL =================
 
     private BigDecimal calculateTotal(List<OrderItem> items) {
         return items.stream()
-                .map(i -> i.getUnitPrice()
-                        .multiply(BigDecimal.valueOf(i.getQuantity())))
+                .map(i -> i.getUnitPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    // ================= ORDER =================
 
     private Order createWaitingPaymentOrder(Long userId,
-             List<OrderItem> items,
-             BigDecimal total,
-             AddressInternalResponse addressResponse) {
-
+                                            List<OrderItem> items,
+                                            BigDecimal total,
+                                            AddressInternalResponse addressResponse) {
         Order order = new Order();
         order.setUserId(userId);
         order.setStatus(OrderStatus.WAITING_PAYMENT);
@@ -296,18 +260,15 @@ public class OrderServiceImpl implements OrderService {
         address.setPostalCode(addressResponse.postalCode());
 
         order.setAddress(address);
-
         items.forEach(i -> i.setOrder(order));
         order.setItems(items);
 
         return orderRepository.save(order);
     }
 
-
     // ================= EVENT MAPPER =================
 
     private OrderCreatedEvent toOrderCreatedEvent(Order order) {
-
         List<OrderItemEvent> items = order.getItems().stream()
                 .map(i -> new OrderItemEvent(
                         i.getProductId(),
@@ -328,7 +289,6 @@ public class OrderServiceImpl implements OrderService {
     // ================= MAPPERS =================
 
     private OrderResponse mapToResponse(Order order) {
-
         List<OrderItemResponse> items = order.getItems().stream()
                 .map(i -> new OrderItemResponse(
                         i.getProductId(),
@@ -353,16 +313,5 @@ public class OrderServiceImpl implements OrderService {
                 address,
                 items
         );
-    }
-
-    private AddressEmbeddable mapAddress(AddressDto dto) {
-
-        AddressEmbeddable address = new AddressEmbeddable();
-        address.setCity(dto.city());
-        address.setDistrict(dto.district());
-        address.setFullAddress(dto.fullAddress());
-        address.setPostalCode(dto.postalCode());
-
-        return address;
     }
 }

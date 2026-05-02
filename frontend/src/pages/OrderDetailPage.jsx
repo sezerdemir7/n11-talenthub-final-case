@@ -52,15 +52,14 @@ export default function OrderDetailPage() {
   }, [orderId]);
 
   const handleCancelOrder = async () => {
-    const uid = user?.userId != null ? Number(user.userId) : null;
     const oid = order?.orderId ?? order?.id ?? orderId;
-    if (uid == null || Number.isNaN(uid) || oid == null) {
-      showToast('Oturum veya sipariş bilgisi eksik', 'error');
+    if (oid == null) {
+      showToast('Sipariş bilgisi eksik', 'error');
       return;
     }
     setCancelling(true);
     try {
-      const { data: raw } = await orderService.cancelOrder(oid, uid);
+      const { data: raw } = await orderService.cancelOrder(oid);
       showToast(raw?.message || 'Sipariş iptal edildi', 'success');
       setCancelConfirmOpen(false);
       const { data: rest } = await orderService.getById(orderId);
@@ -82,7 +81,7 @@ export default function OrderDetailPage() {
   const statusKey = (order.status || '').toUpperCase();
   const st = getOrderStatusMeta(order.status);
   const needsPayment = statusKey === 'WAITING_PAYMENT';
-  const canCancelConfirmed = statusKey === 'CONFIRMED' && user?.userId != null;
+  const canCancelConfirmed = statusKey === 'CONFIRMED' && Boolean(user);
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">

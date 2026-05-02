@@ -6,6 +6,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 
+@ConditionalOnClass(name = "feign.RequestInterceptor")
+
 public class CorrelationLoggingAutoConfiguration {
 
     @Bean

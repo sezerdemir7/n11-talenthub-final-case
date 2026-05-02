@@ -12,6 +12,5 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     Optional<Product> findBySlug(String slug);
     List<Product> findAllByIdIn(List<Long> ids);
     List<Product> findBySellerIdAndActiveTrue(Long sellerId);
-
-
+    List<Product> findBySellerIdAndSuspendedBySellerStatusTrue(Long sellerId);
 }

@@ -8,16 +8,15 @@ import java.util.List;
 
 public interface AddressService {
 
-    AddressResponse create(Long userId, AddressRequest request);
+    AddressResponse create(AddressRequest request);
 
-    List<AddressResponse> getMyAddresses(Long userId);
+    List<AddressResponse> getMyAddresses();
 
-    AddressResponse update(Long userId, Long addressId, AddressRequest request);
+    AddressResponse update(Long addressId, AddressRequest request);
 
-    void delete(Long userId, Long addressId);
+    void delete(Long addressId);
 
-    AddressResponse setDefault(Long userId, Long addressId);
+    AddressResponse setDefault(Long addressId);
 
     AddressInternalResponse getInternalAddress(Long userId, Long addressId);
-
 }

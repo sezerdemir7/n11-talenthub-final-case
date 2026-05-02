@@ -21,18 +21,17 @@
   }
 }
 
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 @utility animate-slide-in {
-  animation: slide-in 0.3s ease-out;
+  animation: slide-in 0.25s ease-out;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
-body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@utility animate-fade-in {
+  animation: fade-in 0.2s ease-out;
 }
 
 @utility scrollbar-hide {
@@ -48,4 +47,27 @@ body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #F5F5F5;
+}
+
+/* Selection color */
+::selection {
+  background-color: #E6007E22;
+  color: #111111;
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid #E6007E;
+  outline-offset: 2px;
 }

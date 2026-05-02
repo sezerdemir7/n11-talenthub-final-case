@@ -1,5 +1,6 @@
 package com.demir.ecommerce.productservice.messaging;
 
+import com.demir.ecommerce.commonlib.event.seller.SellerActivatedEvent;
 import com.demir.ecommerce.commonlib.event.seller.SellerSuspendedEvent;
 import com.demir.ecommerce.commonlib.messaging.RabbitMqConstants;
 import com.demir.ecommerce.productservice.service.ProductService;
@@ -19,4 +20,10 @@ public class SellerEventListener {
     public void handleSellerSuspended(SellerSuspendedEvent event) {
         productService.deactivateProductsBySellerId(event.sellerId());
     }
+    @RabbitListener(queues = RabbitMqConstants.PRODUCT_SELLER_ACTIVATED_QUEUE)
+    public void handleSellerActivated(SellerActivatedEvent event) {
+        productService.activateProductsBySellerId(event.sellerId());
+    }
+
+
 }

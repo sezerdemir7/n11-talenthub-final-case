@@ -1,7 +1,12 @@
 package com.demir.ecommerce.userservice.service.impl;
 
+import com.demir.ecommerce.commonlib.dto.PageResponse;
+import com.demir.ecommerce.commonlib.event.seller.SellerActivatedEvent;
 import com.demir.ecommerce.commonlib.event.seller.SellerSuspendedEvent;
 import com.demir.ecommerce.commonlib.excepption.BusinessException;
+import com.demir.ecommerce.commonlib.excepption.message.GeneralErrorMessage;
+import com.demir.ecommerce.commonlib.security.SecurityUtils;
+import com.demir.ecommerce.userservice.dto.seller.request.SellerFilterRequest;
 import com.demir.ecommerce.userservice.dto.seller.request.SellerStatusUpdateRequest;
 import com.demir.ecommerce.userservice.dto.seller.request.UpdateSellerProfileRequest;
 import com.demir.ecommerce.userservice.dto.seller.response.SellerProfileResponse;
@@ -14,6 +19,14 @@ import com.demir.ecommerce.userservice.messaging.SellerEventPublisher;
 import com.demir.ecommerce.userservice.repository.SellerProfileRepository;
 import com.demir.ecommerce.userservice.repository.UserRepository;
 import com.demir.ecommerce.userservice.service.SellerService;
+
+import com.demir.ecommerce.userservice.dto.seller.response.SellerResponse;
+
+import com.demir.ecommerce.userservice.specification.SellerSpecification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,7 +40,8 @@ public class SellerServiceImpl implements SellerService {
     private final SellerEventPublisher sellerEventPublisher;
 
     public SellerServiceImpl(SellerProfileRepository sellerProfileRepository,
-                             UserRepository userRepository, SellerEventPublisher sellerEventPublisher) {
+                             UserRepository userRepository,
+                             SellerEventPublisher sellerEventPublisher) {
         this.sellerProfileRepository = sellerProfileRepository;
         this.userRepository = userRepository;
         this.sellerEventPublisher = sellerEventPublisher;
@@ -35,28 +49,29 @@ public class SellerServiceImpl implements SellerService {
 
     @Override
     @Transactional(readOnly = true)
-    public SellerProfileResponse getByUserId(Long userId) {
-        SellerProfile sellerProfile = findSellerProfileByUserId(userId);
-        return mapToResponse(sellerProfile);
+    public SellerProfileResponse getMyProfile() {
+        Long userId = SecurityUtils.getUserId();
+        return mapToResponse(findSellerProfileByUserId(userId));
     }
 
     @Override
     @Transactional
-    public SellerProfileResponse updateMyProfile(Long userId, UpdateSellerProfileRequest request) {
-        SellerProfile sellerProfile = findSellerProfileByUserId(userId);
+    public SellerProfileResponse updateMyProfile(UpdateSellerProfileRequest request) {
+        Long userId = SecurityUtils.getUserId();
 
+        SellerProfile sellerProfile = findSellerProfileByUserId(userId);
         sellerProfile.setStoreName(request.storeName());
         sellerProfile.setCompanyName(request.companyName());
         sellerProfile.setStoreDescription(request.storeDescription());
 
-        SellerProfile updatedProfile = sellerProfileRepository.save(sellerProfile);
-
-        return mapToResponse(updatedProfile);
+        return mapToResponse(sellerProfileRepository.save(sellerProfile));
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<SellerProfileResponse> getPendingApplications() {
+        requireAdmin();
+
         return sellerProfileRepository.findByStatus(SellerStatus.PENDING)
                 .stream()
                 .map(this::mapToResponse)
@@ -66,6 +81,7 @@ public class SellerServiceImpl implements SellerService {
     @Override
     @Transactional
     public SellerProfileResponse updateStatus(Long sellerProfileId, SellerStatusUpdateRequest request) {
+        requireAdmin();
 
         SellerProfile sellerProfile = sellerProfileRepository.findById(sellerProfileId)
                 .orElseThrow(() -> new BusinessException(UserErrorMessage.SELLER_PROFILE_NOT_FOUND));
@@ -81,7 +97,12 @@ public class SellerServiceImpl implements SellerService {
             sellerProfile.setStatus(SellerStatus.APPROVED);
             sellerProfile.setIsVerified(true);
             user.addRole(Role.SELLER);
+
+            sellerEventPublisher.publishSellerActivated(
+                    new SellerActivatedEvent(user.getId())
+            );
         }
+
 
         if (request.status() == SellerStatus.REJECTED) {
             sellerProfile.setStatus(SellerStatus.REJECTED);
@@ -100,11 +121,52 @@ public class SellerServiceImpl implements SellerService {
         }
 
         userRepository.save(user);
-        SellerProfile savedProfile = sellerProfileRepository.save(sellerProfile);
-
-        return mapToResponse(savedProfile);
+        return mapToResponse(sellerProfileRepository.save(sellerProfile));
     }
 
+    @Override
+    public PageResponse<SellerResponse> getAllSellers(SellerFilterRequest filter, int page, int size) {
+        requireAdmin();
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("storeName").ascending());
+
+        Page<SellerProfile> sellerPage = sellerProfileRepository
+                .findAll(SellerSpecification.filter(filter), pageable);
+
+        List<SellerResponse> content = sellerPage.getContent()
+                .stream()
+                .map(this::mapToSellerResponse)
+                .toList();
+
+        return PageResponse.of(
+                content,
+                sellerPage.getNumber(),
+                sellerPage.getSize(),
+                sellerPage.getTotalElements(),
+                sellerPage.getTotalPages(),
+                sellerPage.isFirst(),
+                sellerPage.isLast(),
+                sellerPage.isEmpty()
+        );
+    }
+
+    private SellerResponse mapToSellerResponse(SellerProfile sellerProfile) {
+        return new SellerResponse(
+                sellerProfile.getUser().getId(),
+                sellerProfile.getStoreName(),
+                sellerProfile.getCompanyName(),
+                sellerProfile.getStatus(),
+                Boolean.TRUE.equals(sellerProfile.getIsVerified())
+        );
+    }
+
+
+
+    private void requireAdmin() {
+        if (!SecurityUtils.isAdmin()) {
+            throw new BusinessException(GeneralErrorMessage.ACCESS_DENIED);
+        }
+    }
 
     private SellerProfile findSellerProfileByUserId(Long userId) {
         return sellerProfileRepository.findByUserId(userId)

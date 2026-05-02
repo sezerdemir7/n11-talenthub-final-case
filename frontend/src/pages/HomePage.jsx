@@ -1,10 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { HiTruck, HiShieldCheck, HiCreditCard } from 'react-icons/hi2';
 import { productService } from '../services/productService';
 import ProductGrid from '../components/product/ProductGrid';
 import Pagination from '../components/product/Pagination';
-import HeroSlider from '../components/layout/HeroSlider';
 import CategoryBar from '../components/layout/CategoryBar';
+
+const VALUE_PROPS = [
+  { icon: HiTruck, title: 'Ücretsiz Kargo', desc: '150 TL ve üzeri siparişlerde' },
+  { icon: HiShieldCheck, title: 'Güvenli Alışveriş', desc: '256-bit SSL ile korumalı' },
+  { icon: HiCreditCard, title: 'Kolay Ödeme', desc: 'Kredi/banka kartı desteği' },
+];
 
 export default function HomePage() {
   const [searchParams] = useSearchParams();
@@ -16,19 +22,19 @@ export default function HomePage() {
 
   const keyword = searchParams.get('keyword') || '';
   const categoryId = searchParams.get('categoryId') || '';
+  const isFiltered = keyword || categoryId;
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const { data: restResponse } = await productService.getAll({
+      const { data: res } = await productService.getAll({
         page,
         size: 12,
         keyword: keyword || undefined,
         categoryId: categoryId || undefined,
       });
-
-      const pageData = restResponse.data;
+      const pageData = res.data;
       setProducts(pageData.content || []);
       setTotalPages(pageData.totalPages || 0);
     } catch (err) {
@@ -50,40 +56,45 @@ export default function HomePage() {
     <>
       <CategoryBar />
 
-      <div className="max-w-7xl mx-auto px-4 py-6 space-y-8">
-        {!keyword && !categoryId && <HeroSlider />}
+      {!isFiltered && (
+        <div className="bg-secondary">
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/10">
+              {VALUE_PROPS.map(({ icon: Icon, title, desc }) => (
+                <div key={title} className="flex items-center gap-4 py-4 sm:py-0 sm:px-8 first:pl-0 last:pr-0">
+                  <div className="h-11 w-11 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                    <Icon className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">{title}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
-        {/* Title */}
-        <div>
-          {keyword ? (
-            <h1 className="text-2xl font-bold text-secondary">
-              &quot;{keyword}&quot; için arama sonuçları
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-xl font-bold text-secondary">
+              {keyword
+                ? `"${keyword}" için arama sonuçları`
+                : categoryId
+                ? 'Kategori Ürünleri'
+                : 'Tüm Ürünler'}
             </h1>
-          ) : categoryId ? (
-            <h1 className="text-2xl font-bold text-secondary">
-              Kategori Ürünleri
-            </h1>
-          ) : (
-            <h1 className="text-2xl font-bold text-secondary">
-              Tüm Ürünler
-            </h1>
-          )}
+            {!loading && !error && products.length > 0 && (
+              <p className="text-sm text-gray-500 mt-0.5">{products.length} ürün listeleniyor</p>
+            )}
+          </div>
         </div>
 
-        {/* Product Grid */}
-        <ProductGrid
-          products={products}
-          loading={loading}
-          error={error}
-          onRetry={fetchProducts}
-        />
+        <ProductGrid products={products} loading={loading} error={error} onRetry={fetchProducts} />
 
-        {/* Pagination */}
-        <Pagination
-          currentPage={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-        />
+        <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
     </>
   );

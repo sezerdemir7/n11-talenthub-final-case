@@ -6,11 +6,13 @@ import com.demir.ecommerce.cartservice.dto.internal.CartInternalResponse;
 
 public interface CartService {
 
-    CartResponse getCart(Long userId);
+    CartResponse getCart();
 
-    void addToCart(Long userId, AddToCartRequest request);
+    void addToCart(AddToCartRequest request);
 
-    void clearCart(Long userId);
+    void clearCart();
 
     CartInternalResponse getInternalCart(Long userId);
+    void clearCartInternal(Long userId);
+
 }

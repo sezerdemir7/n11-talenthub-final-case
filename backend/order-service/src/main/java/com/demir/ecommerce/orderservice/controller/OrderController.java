@@ -6,10 +6,13 @@ import com.demir.ecommerce.orderservice.dto.CheckoutRequest;
 import com.demir.ecommerce.orderservice.dto.OrderItemResponse;
 import com.demir.ecommerce.orderservice.dto.OrderResponse;
 import com.demir.ecommerce.orderservice.service.OrderService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "Order", description = "Order management operations")
 @RestController
 @RequestMapping("/api/v1/orders")
 public class OrderController {
@@ -20,6 +23,7 @@ public class OrderController {
         this.orderService = orderService;
     }
 
+    @Operation(summary = "Get order by id", description = "Returns order details by order id")
     @GetMapping("/{orderId}")
     public ResponseEntity<RestResponse<OrderResponse>> getOrderById(
             @PathVariable Long orderId
@@ -28,51 +32,40 @@ public class OrderController {
         return ResponseEntity.ok(RestResponse.of(response));
     }
 
-
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<RestResponse<PageResponse<OrderResponse>>> getOrdersByUserId(
-            @PathVariable Long userId,
+    @Operation(summary = "Get my orders", description = "Returns paginated orders for the authenticated user")
+    @GetMapping("/my-orders")
+    public ResponseEntity<RestResponse<PageResponse<OrderResponse>>> getMyOrders(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        PageResponse<OrderResponse> response =
-                orderService.getOrdersByUserId(userId, page, size);
-
+        PageResponse<OrderResponse> response = orderService.getOrdersByUserId(page, size);
         return ResponseEntity.ok(RestResponse.of(response));
     }
 
-
+    @Operation(summary = "Get order items", description = "Returns paginated items of a specific order")
     @GetMapping("/{orderId}/items")
     public ResponseEntity<RestResponse<PageResponse<OrderItemResponse>>> getOrderItems(
             @PathVariable Long orderId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        PageResponse<OrderItemResponse> response =
-                orderService.getOrderItems(orderId, page, size);
-
+        PageResponse<OrderItemResponse> response = orderService.getOrderItems(orderId, page, size);
         return ResponseEntity.ok(RestResponse.of(response));
     }
 
-
-
+    @Operation(summary = "Cancel order", description = "Cancels a confirmed order by order id")
     @DeleteMapping("/{orderId}")
-    public ResponseEntity<RestResponse<Void>> cancelOrder(
-            @PathVariable Long orderId,
-            @RequestHeader("X-User-Id") Long userId
-    ) {
-        orderService.cancelOrder(orderId, userId);
+    public ResponseEntity<RestResponse<Void>> cancelOrder(@PathVariable Long orderId) {
+        orderService.cancelOrder(orderId);
         return ResponseEntity.ok(RestResponse.of(null, "Order cancelled successfully"));
     }
 
-
+    @Operation(summary = "Checkout", description = "Creates a new order from the authenticated user's cart")
     @PostMapping("/checkout")
     public ResponseEntity<RestResponse<OrderResponse>> checkout(
-            @RequestHeader("X-User-Id") Long userId,
             @Valid @RequestBody CheckoutRequest request
     ) {
-        OrderResponse response = orderService.checkout(userId, request);
+        OrderResponse response = orderService.checkout(request);
         return ResponseEntity.ok(RestResponse.of(response, "Order created successfully"));
     }
-
 }

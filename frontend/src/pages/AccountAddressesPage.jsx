@@ -27,7 +27,7 @@ function toFormValues(row) {
 }
 
 export default function AccountAddressesPage() {
-  const { user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { showToast } = useToast();
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,31 +37,27 @@ export default function AccountAddressesPage() {
   const [formLoading, setFormLoading] = useState(false);
   const [acting, setActing] = useState(null);
 
-  const uid = user?.userId;
-
   const load = useCallback(async () => {
-    if (!uid) return;
     setLoading(true);
     setError(null);
     try {
-      const { data: rest } = await addressService.list(uid);
+      const { data: rest } = await addressService.list();
       setList(rest.data || []);
     } catch (err) {
       setError(err.message || 'Adresler yüklenemedi');
     } finally {
       setLoading(false);
     }
-  }, [uid]);
+  }, []);
 
   useEffect(() => {
     load();
   }, [load]);
 
   const onCreate = async (data) => {
-    if (!uid) return;
     setFormLoading(true);
     try {
-      await addressService.create(uid, {
+      await addressService.create({
         title: data.title.trim(),
         recipientName: data.recipientName.trim(),
         phone: data.phone.trim(),
@@ -81,10 +77,10 @@ export default function AccountAddressesPage() {
   };
 
   const onUpdate = async (data) => {
-    if (!uid || !editingId) return;
+    if (!editingId) return;
     setFormLoading(true);
     try {
-      await addressService.update(uid, editingId, {
+      await addressService.update(editingId, {
         title: data.title.trim(),
         recipientName: data.recipientName.trim(),
         phone: data.phone.trim(),
@@ -104,10 +100,10 @@ export default function AccountAddressesPage() {
   };
 
   const handleDelete = async (addressId) => {
-    if (!uid || !window.confirm('Bu adresi silmek istediğinize emin misiniz?')) return;
+    if (!window.confirm('Bu adresi silmek istediğinize emin misiniz?')) return;
     setActing({ id: addressId, kind: 'delete' });
     try {
-      await addressService.remove(uid, addressId);
+      await addressService.remove(addressId);
       showToast('Adres silindi', 'success');
       if (editingId === addressId) setEditingId(null);
       await load();
@@ -119,10 +115,9 @@ export default function AccountAddressesPage() {
   };
 
   const handleSetDefault = async (addressId) => {
-    if (!uid) return;
     setActing({ id: addressId, kind: 'default' });
     try {
-      await addressService.setDefault(uid, addressId);
+      await addressService.setDefault(addressId);
       showToast('Varsayılan adres güncellendi', 'success');
       await load();
     } catch (err) {
@@ -132,7 +127,7 @@ export default function AccountAddressesPage() {
     }
   };
 
-  if (!uid) {
+  if (!isAuthenticated) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-12 text-center text-gray-500">
         Oturum bilgisi bulunamadı.

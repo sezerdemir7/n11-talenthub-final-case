@@ -29,7 +29,7 @@ function addressSummary(row) {
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { cart, fetchCart } = useCart();
   const { showToast } = useToast();
   const [submitting, setSubmitting] = useState(false);
@@ -40,17 +40,11 @@ export default function CheckoutPage() {
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
   const [addressFormLoading, setAddressFormLoading] = useState(false);
 
-  const userId = user?.userId;
-
   const loadAddresses = useCallback(
     async (preferSelectId) => {
-      if (!userId) {
-        setAddressesLoading(false);
-        return;
-      }
       setAddressesLoading(true);
       try {
-        const { data: rest } = await addressService.list(userId);
+        const { data: rest } = await addressService.list();
         const list = rest.data || [];
         setAddresses(list);
         setSelectedAddressId((prev) => {
@@ -76,7 +70,7 @@ export default function CheckoutPage() {
         setAddressesLoading(false);
       }
     },
-    [userId, showToast]
+    [showToast]
   );
 
   useEffect(() => {
@@ -88,10 +82,9 @@ export default function CheckoutPage() {
   }, [loadAddresses]);
 
   const handleInlineAddressCreate = async (data) => {
-    if (!userId) return;
     setAddressFormLoading(true);
     try {
-      const { data: rest } = await addressService.create(userId, {
+      const { data: rest } = await addressService.create({
         title: data.title.trim(),
         recipientName: data.recipientName.trim(),
         phone: data.phone.trim(),
@@ -112,7 +105,7 @@ export default function CheckoutPage() {
   };
 
   const handleCreateOrder = async () => {
-    if (!userId) {
+    if (!isAuthenticated) {
       showToast('Oturum bilgisi bulunamadı', 'error');
       return;
     }
@@ -203,7 +196,7 @@ export default function CheckoutPage() {
                           <p className="text-gray-600 mt-0.5">
                             {addr.recipientName || addr.fullName} — {addr.phone || addr.phoneNumber}
                           </p>
-                          <p className="text-gray-500 mt-1 break-words">{addressSummary(addr)}</p>
+                          <p className="text-gray-500 mt-1 wrap-break-word">{addressSummary(addr)}</p>
                         </div>
                       </label>
                     </li>

@@ -40,7 +40,7 @@ function isBenignEmptyCartFetchError(error) {
 }
 
 export function CartProvider({ children }) {
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [cart, setCart] = useState(emptyCart);
   /** İlk yükleme bitene kadar true — girişli kullanıcıda boş sepet flash'ını önler */
   const [loading, setLoading] = useState(true);
@@ -52,14 +52,14 @@ export function CartProvider({ children }) {
   }, []);
 
   const fetchCart = useCallback(async () => {
-    if (!isAuthenticated || !user?.userId) {
+    if (!isAuthenticated) {
       loadGuestCartIntoState();
       return;
     }
     setLoading(true);
     try {
-      await mergeGuestCartIntoServer(user.userId, cartService);
-      const { data: rest } = await cartService.getCart(user.userId);
+      await mergeGuestCartIntoServer(cartService);
+      const { data: rest } = await cartService.getCart();
       setCart(normalizeCart(rest.data));
     } catch (error) {
       if (isBenignEmptyCartFetchError(error)) {
@@ -70,16 +70,16 @@ export function CartProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, user?.userId, showToast, loadGuestCartIntoState]);
+  }, [isAuthenticated, showToast, loadGuestCartIntoState]);
 
   useEffect(() => {
-    if (!isAuthenticated || !user?.userId) {
+    if (!isAuthenticated) {
       loadGuestCartIntoState();
       setLoading(false);
       return;
     }
     fetchCart();
-  }, [isAuthenticated, user?.userId, fetchCart, loadGuestCartIntoState]);
+  }, [isAuthenticated, fetchCart, loadGuestCartIntoState]);
 
   const addItem = async (productId, quantity = 1, snapshot = {}) => {
     const qty = Math.max(1, Number(quantity) || 1);
@@ -94,9 +94,9 @@ export function CartProvider({ children }) {
             : 0,
     };
 
-    if (isAuthenticated && user?.userId) {
+    if (isAuthenticated) {
       try {
-        await cartService.addItem(user.userId, { productId, quantity: qty });
+        await cartService.addItem({ productId, quantity: qty });
         await fetchCart();
         showToast('Ürün sepete eklendi', 'success');
       } catch (error) {
@@ -123,9 +123,9 @@ export function CartProvider({ children }) {
   };
 
   const clearCart = async () => {
-    if (isAuthenticated && user?.userId) {
+    if (isAuthenticated) {
       try {
-        await cartService.clearCart(user.userId);
+        await cartService.clearCart();
         setCart(emptyCart);
         showToast('Sepet temizlendi', 'success');
       } catch (error) {

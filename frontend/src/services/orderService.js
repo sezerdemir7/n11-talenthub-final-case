@@ -21,9 +21,10 @@ export const orderService = {
 
   getById: (orderId) => api.get(`${ORDER_BASE}/${orderId}`),
 
-  getByUserId: (userId, params = {}) => {
+  // GET /my-orders — kullanıcı JWT'den belirlenir, userId gerekmez
+  getMyOrders: (params = {}) => {
     const { page = 0, size = 10 } = params;
-    return api.get(`${ORDER_BASE}/user/${userId}`, { params: { page, size } });
+    return api.get(`${ORDER_BASE}/my-orders`, { params: { page, size } });
   },
 
   getOrderItems: (orderId, params = {}) => {
@@ -31,8 +32,6 @@ export const orderService = {
     return api.get(`${ORDER_BASE}/${orderId}/items`, { params: { page, size } });
   },
 
-  cancelOrder: (orderId, userId) =>
-    api.delete(`${ORDER_BASE}/${orderId}`, {
-      headers: { 'X-User-Id': String(userId) },
-    }),
+  // DELETE /{orderId} — kullanıcı JWT'den belirlenir, X-User-Id gerekmez
+  cancelOrder: (orderId) => api.delete(`${ORDER_BASE}/${orderId}`),
 };

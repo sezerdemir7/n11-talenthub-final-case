@@ -1,6 +1,8 @@
 package com.demir.ecommerce.productservice.service.impl;
 
 import com.demir.ecommerce.commonlib.excepption.BusinessException;
+import com.demir.ecommerce.commonlib.excepption.message.GeneralErrorMessage;
+import com.demir.ecommerce.commonlib.security.SecurityUtils;
 import com.demir.ecommerce.productservice.dto.category.request.CategoryCreateRequest;
 import com.demir.ecommerce.productservice.dto.category.request.CategoryUpdateRequest;
 import com.demir.ecommerce.productservice.dto.category.response.CategoryFilterResponse;
@@ -32,6 +34,8 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryResponse create(CategoryCreateRequest request) {
+        requireAdmin();
+
         Category category = new Category();
 
         category.setName(request.name());
@@ -48,6 +52,8 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryResponse update(Long id, CategoryUpdateRequest request) {
+
+        requireAdmin();
         Category category = findCategoryById(id);
 
         if (request.name() != null && !request.name().isBlank()) {
@@ -114,6 +120,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public void delete(Long id) {
+        requireAdmin();
         Category category = findCategoryById(id);
         categoryRepository.delete(category);
     }
@@ -202,5 +209,11 @@ public class CategoryServiceImpl implements CategoryService {
                         Comparator.nullsLast(Integer::compareTo)
                 )
                 .thenComparing(Category::getName, String.CASE_INSENSITIVE_ORDER);
+    }
+
+    private void requireAdmin() {
+        if (!SecurityUtils.isAdmin()) {
+            throw new BusinessException(GeneralErrorMessage.ACCESS_DENIED);
+        }
     }
 }

@@ -24,6 +24,6 @@ public class CartInternalController {
 
     @DeleteMapping("/clear")
     public void clearCart(@RequestHeader("X-User-Id") Long userId) {
-        cartService.clearCart(userId);
+        cartService.clearCartInternal(userId);
     }
 }

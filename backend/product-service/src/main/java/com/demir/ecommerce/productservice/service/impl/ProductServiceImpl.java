@@ -1,6 +1,8 @@
 package com.demir.ecommerce.productservice.service.impl;
 
 import com.demir.ecommerce.commonlib.excepption.BusinessException;
+import com.demir.ecommerce.commonlib.excepption.message.GeneralErrorMessage;
+import com.demir.ecommerce.commonlib.security.SecurityUtils;
 import com.demir.ecommerce.productservice.dto.product.*;
 import com.demir.ecommerce.productservice.dto.productdetail.ProductDetailCreateRequest;
 import com.demir.ecommerce.productservice.dto.productdetail.ProductDetailResponse;
@@ -44,8 +46,13 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductResponse create(Long sellerId, ProductCreateRequest request, MultipartFile image) {
+    public ProductResponse create(ProductCreateRequest request, MultipartFile image) {
+
+        requireSellerOrAdmin();
+
         Category category = findCategoryById(request.categoryId());
+
+        Long sellerId = SecurityUtils.getUserId();
 
         Product product = new Product();
         product.setSellerId(sellerId);
@@ -74,15 +81,17 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductResponse update(Long sellerId, Long id, ProductUpdateRequest request, MultipartFile image) {
+    public ProductResponse update(Long id, ProductUpdateRequest request, MultipartFile image) {
         Product product = findProductById(id);
-        validateSeller(product, sellerId);
+
+        if (!SecurityUtils.isOwnerOrAdmin(product.getSellerId())) {
+            throw new BusinessException(GeneralErrorMessage.ACCESS_DENIED);
+        }
 
         if (request.name() != null && !request.name().isBlank()) {
             product.setName(request.name());
             product.setSlug(generateUniqueSlug(SlugUtil.toSlug(request.name()), product.getId()));
         }
-
 
         if (request.price() != null) {
             product.setPrice(request.price());
@@ -94,6 +103,7 @@ public class ProductServiceImpl implements ProductService {
 
         if (request.active() != null) {
             product.setActive(request.active());
+            product.setSuspendedBySellerStatus(false);
         }
 
         if (request.categoryId() != null) {
@@ -104,7 +114,6 @@ public class ProductServiceImpl implements ProductService {
             if (product.getImageUrl() != null && !product.getImageUrl().isBlank()) {
                 storageService.deleteFile(product.getImageUrl());
             }
-
             product.setImageUrl(storageService.uploadProductImage(image, product.getId()));
         }
 
@@ -153,9 +162,12 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public void delete(Long sellerId, Long id) {
+    public void delete(Long id) {
         Product product = findProductById(id);
-        validateSeller(product, sellerId);
+
+        if (!SecurityUtils.isOwnerOrAdmin(product.getSellerId())) {
+            throw new BusinessException(GeneralErrorMessage.ACCESS_DENIED);
+        }
 
         if (product.getImageUrl() != null && !product.getImageUrl().isBlank()) {
             storageService.deleteFile(product.getImageUrl());
@@ -166,14 +178,12 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<ProductInternalResponse> getByIds(List<Long> ids) {
-
         if (ids == null || ids.isEmpty()) {
             return List.of();
         }
 
-        List<Product> products = productRepository.findAllByIdIn(ids);
-
-        return products.stream()
+        return productRepository.findAllByIdIn(ids)
+                .stream()
                 .map(product -> new ProductInternalResponse(
                         product.getId(),
                         product.getName(),
@@ -181,7 +191,6 @@ public class ProductServiceImpl implements ProductService {
                         product.getPrice(),
                         product.getStock(),
                         product.getActive()
-
                 ))
                 .toList();
     }
@@ -189,14 +198,31 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public void deactivateProductsBySellerId(Long sellerId) {
-
         List<Product> products = productRepository.findBySellerIdAndActiveTrue(sellerId);
-
-        products.forEach(product -> product.setActive(false));
-
+        products.forEach(product -> {
+            product.setActive(false);
+            product.setSuspendedBySellerStatus(true);
+        });
         productRepository.saveAll(products);
     }
 
+    @Override
+    @Transactional
+    public void activateProductsBySellerId(Long sellerId) {
+        List<Product> products = productRepository.findBySellerIdAndSuspendedBySellerStatusTrue(sellerId);
+        products.forEach(product -> {
+            product.setActive(true);
+            product.setSuspendedBySellerStatus(false);
+        });
+        productRepository.saveAll(products);
+    }
+
+
+    private void requireSellerOrAdmin() {
+        if (!SecurityUtils.hasRole("SELLER") && !SecurityUtils.isAdmin()) {
+            throw new BusinessException(GeneralErrorMessage.ACCESS_DENIED);
+        }
+    }
 
     private Product findProductById(Long id) {
         return productRepository.findById(id)
@@ -207,14 +233,6 @@ public class ProductServiceImpl implements ProductService {
         return categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new BusinessException(CategoryErrorMessage.CATEGORY_NOT_FOUND));
     }
-
-    private void validateSeller(Product product, Long sellerId) {
-        if (!Objects.equals(product.getSellerId(), sellerId)) {
-            throw new BusinessException(ProductErrorMessage.PRODUCT_ACCESS_DENIED);
-        }
-    }
-
-
 
     private String generateUniqueSlug(String value, Long currentProductId) {
         String baseSlug = SlugUtil.toSlug(value);
@@ -254,29 +272,12 @@ public class ProductServiceImpl implements ProductService {
             product.setDetail(detail);
         }
 
-        if (request.shortDescription() != null) {
-            detail.setShortDescription(request.shortDescription());
-        }
-
-        if (request.longDescription() != null) {
-            detail.setLongDescription(request.longDescription());
-        }
-
-        if (request.brand() != null) {
-            detail.setBrand(request.brand());
-        }
-
-        if (request.model() != null) {
-            detail.setModel(request.model());
-        }
-
-        if (request.warrantyPeriod() != null) {
-            detail.setWarrantyPeriod(request.warrantyPeriod());
-        }
-
-        if (request.specifications() != null) {
-            detail.setSpecifications(request.specifications());
-        }
+        if (request.shortDescription() != null) detail.setShortDescription(request.shortDescription());
+        if (request.longDescription() != null)  detail.setLongDescription(request.longDescription());
+        if (request.brand() != null)             detail.setBrand(request.brand());
+        if (request.model() != null)             detail.setModel(request.model());
+        if (request.warrantyPeriod() != null)    detail.setWarrantyPeriod(request.warrantyPeriod());
+        if (request.specifications() != null)    detail.setSpecifications(request.specifications());
     }
 
     private ProductResponse toProductResponse(Product product) {
@@ -312,9 +313,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private ProductDetailResponse toProductDetailResponse(ProductDetail detail) {
-        if (detail == null) {
-            return null;
-        }
+        if (detail == null) return null;
 
         return new ProductDetailResponse(
                 detail.getId(),

@@ -21,7 +21,7 @@ public class CartSagaEventListener {
 
     @RabbitListener(queues = RabbitMqConstants.CART_CLEAR_REQUESTED_QUEUE)
     public void handleCartClearRequested(CartClearRequestedEvent event) {
-        cartService.clearCart(event.userId());
+        cartService.clearCartInternal(event.userId());
     }
 
 }

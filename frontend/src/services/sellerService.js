@@ -3,23 +3,28 @@ import api from './api';
 const SELLER_BASE = '/v1/sellers';
 
 export const sellerService = {
-  getMyProfile: (userId) =>
-    api.get(`${SELLER_BASE}/me`, {
-      headers: { 'X-User-Id': String(userId) },
-    }),
+  // Seller: JWT-based
+  getMyProfile: () => api.get(`${SELLER_BASE}/me`),
+  updateMyProfile: (body) => api.put(`${SELLER_BASE}/me`, body),
 
-  updateMyProfile: (userId, body) =>
-    api.put(`${SELLER_BASE}/me`, body, {
-      headers: { 'X-User-Id': String(userId) },
-    }),
+  // Admin: all sellers with optional filters + pagination
+  getAllSellers: (params = {}) => {
+    const { storeName, status, verified, page = 0, size = 10 } = params;
+    return api.get(SELLER_BASE, {
+      params: {
+        storeName: storeName || undefined,
+        status: status || undefined,
+        verified: verified != null ? verified : undefined,
+        page,
+        size,
+      },
+    });
+  },
 
-  /** Admin: bekleyen satıcı başvuruları */
+  // Admin: pending applications
   getPendingApplications: () => api.get(`${SELLER_BASE}/applications/pending`),
 
-  /** Admin: tüm satıcı profilleri — backend: GET /api/v1/sellers/all (yoksa path'i backend ile eşleştirin) */
-  getAllSellerProfiles: () => api.get(`${SELLER_BASE}/all`),
-
-  /** Admin: başvuru / profil durumu */
-  updateApplicationStatus: (sellerProfileId, status) =>
-    api.patch(`${SELLER_BASE}/${sellerProfileId}/status`, { status }),
+  // Admin: update seller status
+  updateApplicationStatus: (userId, status) =>
+    api.patch(`${SELLER_BASE}/${userId}/status`, { status }),
 };

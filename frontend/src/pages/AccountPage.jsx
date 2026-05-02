@@ -26,15 +26,10 @@ export default function AccountPage() {
   const [error, setError] = useState(null);
 
   const fetchOrders = useCallback(async () => {
-    const uid = user?.userId;
-    if (!uid) {
-      setLoading(false);
-      return;
-    }
     setLoading(true);
     setError(null);
     try {
-      const { data: rest } = await orderService.getByUserId(uid, { page, size: 10 });
+      const { data: rest } = await orderService.getMyOrders({ page, size: 10 });
       const parsed = parsePageResponse(rest.data);
       setOrders(parsed.content);
       setTotalPages(parsed.totalPages);
@@ -43,7 +38,7 @@ export default function AccountPage() {
     } finally {
       setLoading(false);
     }
-  }, [user?.userId, page]);
+  }, [page]);
 
   useEffect(() => {
     fetchOrders();

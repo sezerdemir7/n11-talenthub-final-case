@@ -29,6 +29,9 @@ public class Product extends BaseEntity {
     @Column(nullable = false)
     private Boolean active = true;
 
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private Boolean suspendedBySellerStatus = false;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
@@ -95,6 +98,14 @@ public class Product extends BaseEntity {
 
     public void setActive(Boolean active) {
         this.active = active;
+    }
+
+    public Boolean getSuspendedBySellerStatus() {
+        return suspendedBySellerStatus;
+    }
+
+    public void setSuspendedBySellerStatus(Boolean suspendedBySellerStatus) {
+        this.suspendedBySellerStatus = suspendedBySellerStatus;
     }
 
     public Category getCategory() {

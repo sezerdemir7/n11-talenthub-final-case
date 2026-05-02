@@ -40,5 +40,10 @@ public final class RabbitMqConstants {
 
     public static final String ORDER_CANCELLED_ROUTING_KEY = "order.cancelled";
 
+    public static final String PRODUCT_SELLER_ACTIVATED_QUEUE = "product.seller.activated.queue";
+
+    public static final String SELLER_ACTIVATED_ROUTING_KEY = "seller.activated";
+
+
 
 }

@@ -2,18 +2,14 @@ import api from './api';
 
 const BASE = '/v1/users/me/addresses';
 
-const withUser = (userId) => ({ headers: { 'X-User-Id': String(userId) } });
-
 export const addressService = {
-  list: (userId) => api.get(BASE, withUser(userId)),
+  list: () => api.get(BASE),
 
-  create: (userId, body) => api.post(BASE, body, withUser(userId)),
+  create: (body) => api.post(BASE, body),
 
-  update: (userId, addressId, body) =>
-    api.put(`${BASE}/${addressId}`, body, withUser(userId)),
+  update: (addressId, body) => api.put(`${BASE}/${addressId}`, body),
 
-  setDefault: (userId, addressId) =>
-    api.patch(`${BASE}/${addressId}/default`, {}, withUser(userId)),
+  setDefault: (addressId) => api.patch(`${BASE}/${addressId}/default`, {}),
 
-  remove: (userId, addressId) => api.delete(`${BASE}/${addressId}`, withUser(userId)),
+  remove: (addressId) => api.delete(`${BASE}/${addressId}`),
 };

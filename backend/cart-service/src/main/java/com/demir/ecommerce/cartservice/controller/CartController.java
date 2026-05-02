@@ -20,31 +20,24 @@ public class CartController {
         this.cartService = cartService;
     }
 
-    @Operation(summary = "Get cart", description = "Returns user cart with items")
+    @Operation(summary = "Get cart", description = "Returns authenticated user's cart with items")
     @GetMapping
-    public ResponseEntity<RestResponse<CartResponse>> getCart(
-            @RequestHeader("X-User-Id") Long userId
-    ) {
-        CartResponse response = cartService.getCart(userId);
+    public ResponseEntity<RestResponse<CartResponse>> getCart() {
+        CartResponse response = cartService.getCart();
         return ResponseEntity.ok(RestResponse.of(response));
     }
 
-    @Operation(summary = "Add product to cart", description = "Adds product to user cart")
+    @Operation(summary = "Add product to cart", description = "Adds product to authenticated user's cart")
     @PostMapping
-    public ResponseEntity<RestResponse<Void>> addToCart(
-            @RequestHeader("X-User-Id") Long userId,
-            @RequestBody AddToCartRequest request
-    ) {
-        cartService.addToCart(userId, request);
+    public ResponseEntity<RestResponse<Void>> addToCart(@RequestBody AddToCartRequest request) {
+        cartService.addToCart(request);
         return ResponseEntity.ok(RestResponse.of(null, "Product added to cart"));
     }
 
-    @Operation(summary = "Clear cart", description = "Removes all items from cart")
+    @Operation(summary = "Clear cart", description = "Removes all items from authenticated user's cart")
     @DeleteMapping
-    public ResponseEntity<RestResponse<Void>> clearCart(
-            @RequestHeader("X-User-Id") Long userId
-    ) {
-        cartService.clearCart(userId);
+    public ResponseEntity<RestResponse<Void>> clearCart() {
+        cartService.clearCart();
         return ResponseEntity.ok(RestResponse.of(null, "Cart cleared"));
     }
 }

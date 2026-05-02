@@ -89,6 +89,19 @@ public class RabbitMqConfig {
     }
 
 
+    @Bean
+    public Queue productSellerActivatedQueue() {
+        return new Queue(RabbitMqConstants.PRODUCT_SELLER_ACTIVATED_QUEUE);
+    }
+
+    @Bean
+    public Binding productSellerActivatedBinding() {
+        return BindingBuilder
+                .bind(productSellerActivatedQueue())
+                .to(sagaExchange())
+                .with(RabbitMqConstants.SELLER_ACTIVATED_ROUTING_KEY);
+    }
+
 
 
 }

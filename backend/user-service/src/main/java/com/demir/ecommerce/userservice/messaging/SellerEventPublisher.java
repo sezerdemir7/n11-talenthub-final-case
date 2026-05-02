@@ -1,5 +1,6 @@
 package com.demir.ecommerce.userservice.messaging;
 
+import com.demir.ecommerce.commonlib.event.seller.SellerActivatedEvent;
 import com.demir.ecommerce.commonlib.event.seller.SellerSuspendedEvent;
 import com.demir.ecommerce.commonlib.messaging.RabbitMqConstants;
 
@@ -22,4 +23,13 @@ public class SellerEventPublisher {
                 event
         );
     }
+
+    public void publishSellerActivated(SellerActivatedEvent event) {
+        rabbitTemplate.convertAndSend(
+                RabbitMqConstants.SAGA_EXCHANGE,
+                RabbitMqConstants.SELLER_ACTIVATED_ROUTING_KEY,
+                event
+        );
+    }
+
 }

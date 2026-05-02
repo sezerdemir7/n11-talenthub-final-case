@@ -79,13 +79,13 @@ export function guestLinesToCartState(lines) {
 }
 
 /** Giriş sonrası: misafir satırlarını API sepetine ekler; başarısız satırlar localStorage'da kalır */
-export async function mergeGuestCartIntoServer(userId, cartService) {
+export async function mergeGuestCartIntoServer(cartService) {
   const lines = loadGuestCartLines();
   if (!lines.length) return;
   const failed = [];
   for (const line of lines) {
     try {
-      await cartService.addItem(userId, {
+      await cartService.addItem({
         productId: line.productId,
         quantity: Math.max(1, Number(line.quantity) || 1),
       });

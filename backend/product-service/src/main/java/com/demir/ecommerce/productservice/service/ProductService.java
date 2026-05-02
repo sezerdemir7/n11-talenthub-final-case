@@ -9,9 +9,9 @@ import java.util.List;
 
 public interface ProductService {
 
-    ProductResponse create(Long sellerId, ProductCreateRequest request, MultipartFile image);
+    ProductResponse create(ProductCreateRequest request, MultipartFile image);
 
-    ProductResponse update(Long sellerId, Long id, ProductUpdateRequest request, MultipartFile image);
+    ProductResponse update(Long id, ProductUpdateRequest request, MultipartFile image);
 
     ProductResponse getById(Long id);
 
@@ -21,10 +21,12 @@ public interface ProductService {
 
     Page<ProductListResponse> getBySellerId(Long sellerId, Pageable pageable);
 
-    void delete(Long sellerId, Long id);
+    void delete(Long id);
 
     List<ProductInternalResponse> getByIds(List<Long> ids);
 
     void deactivateProductsBySellerId(Long sellerId);
+
+    void activateProductsBySellerId(Long sellerId);
 
 }
