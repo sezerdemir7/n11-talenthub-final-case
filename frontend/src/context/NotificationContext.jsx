@@ -52,27 +52,65 @@ export function NotificationProvider({ children }) {
   const { showToast } = useToast();
   const [notifications, setNotifications] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [nextPage, setNextPage] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
   const processedMessageKeys = useRef(new Set());
   const currentUserId = user?.userId ?? user?.id;
+  const pageSize = 20;
 
   const fetchNotifications = useCallback(async () => {
     if (!isAuthenticated) return;
     try {
-      const { data: rest } = await notificationService.getAll();
-      const list = rest?.data;
-      const raw = Array.isArray(list) ? list : [];
+      const { data: rest } = await notificationService.getAll(0, pageSize);
+      const pageData = rest?.data;
+      const raw = Array.isArray(pageData?.content) ? pageData.content : [];
       const mapped = raw.map(mapApiToNotification);
       mapped.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setNotifications(mapped);
+      const pageNumber = Number(pageData?.pageNumber ?? 0);
+      const totalPages = Number(pageData?.totalPages ?? 0);
+      setNextPage(pageNumber + 1);
+      setHasMore(pageNumber + 1 < totalPages);
     } catch (error) {
       showToast(error.message || 'Bildirimler yüklenemedi', 'error');
     }
   }, [isAuthenticated, showToast]);
 
+  const loadMoreNotifications = useCallback(async () => {
+    if (!isAuthenticated || loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const { data: rest } = await notificationService.getAll(nextPage, pageSize);
+      const pageData = rest?.data;
+      const raw = Array.isArray(pageData?.content) ? pageData.content : [];
+      const mapped = raw.map(mapApiToNotification);
+      setNotifications((prev) => {
+        const existingIds = new Set(prev.map((n) => n.id));
+        const merged = [...prev];
+        for (const n of mapped) {
+          if (n.id != null && existingIds.has(n.id)) continue;
+          merged.push(n);
+        }
+        return merged.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      });
+      const pageNumber = Number(pageData?.pageNumber ?? nextPage);
+      const totalPages = Number(pageData?.totalPages ?? 0);
+      setNextPage(pageNumber + 1);
+      setHasMore(pageNumber + 1 < totalPages);
+    } catch (error) {
+      showToast(error.message || 'Daha fazla bildirim yüklenemedi', 'error');
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [isAuthenticated, loadingMore, hasMore, nextPage, showToast]);
+
   useEffect(() => {
     if (!isAuthenticated) {
       setNotifications([]);
       setIsConnected(false);
+      setHasMore(false);
+      setNextPage(0);
       return;
     }
     fetchNotifications();
@@ -180,9 +218,12 @@ export function NotificationProvider({ children }) {
     notifications,
     unreadCount,
     isConnected,
+    hasMore,
+    loadingMore,
     markAllAsRead,
     markAsRead,
     refreshNotifications: fetchNotifications,
+    loadMoreNotifications,
   };
 
   return <NotificationContext.Provider value={value}>{children}</NotificationContext.Provider>;

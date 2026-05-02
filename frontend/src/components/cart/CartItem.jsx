@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { HiTrash } from 'react-icons/hi2';
 
 function formatMoney(value) {
   if (value == null) return '-';
@@ -19,6 +20,7 @@ export default function CartItem({
   onSelectionChange,
   onIncreaseQuantity,
   onDecreaseQuantity,
+  onRemoveItem,
 }) {
   const {
     productId,
@@ -105,6 +107,16 @@ export default function CartItem({
         <span className={`text-sm font-semibold ${available ? 'text-primary' : 'text-gray-400 line-through'}`}>
           {formatMoney(totalPrice)}
         </span>
+        <button
+          type="button"
+          onClick={() => onRemoveItem?.(productId)}
+          className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-error transition-colors cursor-pointer"
+          aria-label="Sepetten sil"
+          title="Sepetten sil"
+        >
+          <HiTrash className="h-3.5 w-3.5" />
+          Sepetten sil
+        </button>
       </div>
     </div>
   );

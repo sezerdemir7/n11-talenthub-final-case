@@ -218,6 +218,41 @@ export function CartProvider({ children }) {
     }
   };
 
+  const removeItemFromCart = async (productId) => {
+    const pid = Number(productId);
+    if (!pid) return;
+
+    if (isAuthenticated) {
+      try {
+        const currentItems = Array.isArray(cart.items) ? cart.items : [];
+        const updatedItems = currentItems.filter((item) => Number(item.productId) !== pid);
+
+        await cartService.clearCart();
+        for (const item of updatedItems) {
+          await cartService.addItem({
+            productId: Number(item.productId),
+            quantity: Number(item.quantity || 0),
+          });
+        }
+        await fetchCart();
+        showToast('Urun sepetten kaldirildi', 'success');
+      } catch (error) {
+        showToast(error.message || 'Urun sepetten kaldirilamadi', 'error');
+      }
+      return;
+    }
+
+    try {
+      const lines = loadGuestCartLines();
+      const updated = lines.filter((line) => Number(line.productId) !== pid);
+      saveGuestCartLines(updated);
+      setCart(guestLinesToCartState(updated));
+      showToast('Urun sepetten kaldirildi', 'success');
+    } catch (error) {
+      showToast(error.message || 'Urun sepetten kaldirilamadi', 'error');
+    }
+  };
+
   const itemCount = cart.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
 
   const value = {
@@ -228,6 +263,7 @@ export function CartProvider({ children }) {
     addItem,
     increaseItemQuantity,
     decreaseItemQuantity,
+    removeItemFromCart,
     clearCart,
   };
 

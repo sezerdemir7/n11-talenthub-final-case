@@ -8,7 +8,8 @@ import Button from '../components/ui/Button';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 
 export default function CartPage() {
-  const { cart, loading, clearCart, itemCount, increaseItemQuantity, decreaseItemQuantity } = useCart();
+  const { cart, loading, clearCart, itemCount, increaseItemQuantity, decreaseItemQuantity, removeItemFromCart } =
+    useCart();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [selectedProductIds, setSelectedProductIds] = useState([]);
@@ -111,6 +112,7 @@ export default function CartPage() {
                   onSelectionChange={handleSelectionChange}
                   onIncreaseQuantity={increaseItemQuantity}
                   onDecreaseQuantity={decreaseItemQuantity}
+                  onRemoveItem={removeItemFromCart}
                 />
               ))}
             </div>
