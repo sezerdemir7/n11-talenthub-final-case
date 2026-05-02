@@ -1,8 +1,13 @@
 package com.demir.ecommerce.notificationservice.service;
 
+import com.demir.ecommerce.commonlib.dto.PageResponse;
 import com.demir.ecommerce.notificationservice.dto.NotificationResponse;
 import com.demir.ecommerce.notificationservice.entity.Notification;
 import com.demir.ecommerce.notificationservice.repository.NotificationRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,12 +37,22 @@ public class NotificationService {
     }
 
     @Transactional(readOnly = true)
-    public List<NotificationResponse> getAll(Long userId) {
-        return notificationRepository
-                .findByUserIdOrderByCreatedAtDesc(userId)
-                .stream()
-                .map(this::toResponse)
-                .toList();
+    public PageResponse<NotificationResponse> getAll(Long userId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        Page<Notification> result = notificationRepository
+                .findByUserIdOrderByCreatedAtDesc(userId, pageable);
+
+        return PageResponse.of(
+                result.getContent().stream().map(this::toResponse).toList(),
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages(),
+                result.isFirst(),
+                result.isLast(),
+                result.isEmpty()
+        );
     }
 
     @Transactional

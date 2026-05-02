@@ -1,5 +1,6 @@
 package com.demir.ecommerce.notificationservice.controller;
 
+import com.demir.ecommerce.commonlib.dto.PageResponse;
 import com.demir.ecommerce.commonlib.dto.RestResponse;
 import com.demir.ecommerce.commonlib.security.SecurityUtils;
 import com.demir.ecommerce.notificationservice.dto.NotificationResponse;
@@ -29,11 +30,15 @@ public class NotificationController {
         return ResponseEntity.ok(RestResponse.of(notificationService.getUnread(userId)));
     }
 
+
     @Operation(summary = "Get all notifications", description = "Returns all notifications for authenticated user")
     @GetMapping
-    public ResponseEntity<RestResponse<List<NotificationResponse>>> getAll() {
+    public ResponseEntity<RestResponse<PageResponse<NotificationResponse>>> getAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
         Long userId = SecurityUtils.getUserId();
-        return ResponseEntity.ok(RestResponse.of(notificationService.getAll(userId)));
+        return ResponseEntity.ok(RestResponse.of(notificationService.getAll(userId, page, size)));
     }
 
     @Operation(summary = "Mark all as read", description = "Marks all notifications as read")
