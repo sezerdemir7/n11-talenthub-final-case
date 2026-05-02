@@ -11,5 +11,7 @@ public record CartItemResponse(
         String imageUrl,
         BigDecimal unitPrice,
         Integer quantity,
-        BigDecimal totalPrice
+        BigDecimal totalPrice,
+        Boolean available,
+        String unavailableReason
 ) {}

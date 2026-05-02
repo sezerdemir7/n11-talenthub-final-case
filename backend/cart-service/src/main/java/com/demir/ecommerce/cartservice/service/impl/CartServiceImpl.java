@@ -24,6 +24,10 @@ import java.util.stream.Collectors;
 @Service
 public class CartServiceImpl implements CartService {
 
+    private static final String PRODUCT_NOT_FOUND = "PRODUCT_NOT_FOUND";
+    private static final String PRODUCT_INACTIVE = "PRODUCT_INACTIVE";
+    private static final String INSUFFICIENT_STOCK = "INSUFFICIENT_STOCK";
+
     private final CartRepository cartRepository;
     private final ProductServiceClient productServiceClient;
 
@@ -60,24 +64,26 @@ public class CartServiceImpl implements CartService {
 
         for (CartItem item : cartItems) {
             ProductInternalResponse product = productMap.get(item.getProductId());
+            String unavailableReason = getUnavailableReason(product, item.getQuantity());
+            boolean available = unavailableReason == null;
 
-            if (product == null || !product.active()) {
-                throw new BusinessException(CartErrorMessage.PRODUCT_NOT_AVAILABLE);
+            BigDecimal unitPrice = product != null ? product.price() : item.getUnitPrice();
+            BigDecimal totalPrice = unitPrice.multiply(BigDecimal.valueOf(item.getQuantity()));
+
+            if (available) {
+                cartTotal = cartTotal.add(totalPrice);
             }
-
-            BigDecimal totalPrice =
-                    item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
-
-            cartTotal = cartTotal.add(totalPrice);
 
             items.add(new CartItemResponse(
                     item.getId(),
                     item.getProductId(),
-                    product.name(),
-                    product.imageUrl(),
-                    item.getUnitPrice(),
+                    product != null ? product.name() : "Product is no longer available",
+                    product != null ? product.imageUrl() : null,
+                    unitPrice,
                     item.getQuantity(),
-                    totalPrice
+                    totalPrice,
+                    available,
+                    unavailableReason
             ));
         }
 
@@ -96,25 +102,17 @@ public class CartServiceImpl implements CartService {
         Cart cart = getOrCreateCart(userId);
         List<CartItem> cartItems = cart.getItems();
 
+        ProductInternalResponse product = getProduct(request.productId());
+
         for (CartItem item : cartItems) {
             if (item.getProductId().equals(request.productId())) {
+                validateAvailableProduct(product, item.getQuantity() + request.quantity());
                 item.setQuantity(item.getQuantity() + request.quantity());
                 return;
             }
         }
 
-        ProductInternalResponse product =
-                productServiceClient.getProductsByIds(
-                                Collections.singletonList(request.productId()))
-                        .stream()
-                        .findFirst()
-                        .orElseThrow(() ->
-                                new BusinessException(CartErrorMessage.PRODUCT_NOT_AVAILABLE)
-                        );
-
-        if (!product.active()) {
-            throw new BusinessException(CartErrorMessage.PRODUCT_NOT_AVAILABLE);
-        }
+        validateAvailableProduct(product, request.quantity());
 
         CartItem newItem = new CartItem();
         newItem.setCart(cart);
@@ -149,6 +147,22 @@ public class CartServiceImpl implements CartService {
         cart.getItems().clear();
     }
 
+    @Override
+    @Transactional
+    public void removeCartItemsInternal(Long userId, List<Long> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return;
+        }
+
+        Cart cart = cartRepository.findByUserIdWithItems(userId)
+                .orElseThrow(() ->
+                        new BusinessException(CartErrorMessage.CART_NOT_FOUND)
+                );
+
+        Set<Long> productIdSet = new HashSet<>(productIds);
+        cart.getItems().removeIf(item -> productIdSet.contains(item.getProductId()));
+    }
+
 
     @Override
     @Transactional(readOnly = true)
@@ -177,5 +191,39 @@ public class CartServiceImpl implements CartService {
                     cart.setUserId(userId);
                     return cartRepository.save(cart);
                 });
+    }
+
+    private String getUnavailableReason(ProductInternalResponse product, Integer quantity) {
+        if (product == null) {
+            return PRODUCT_NOT_FOUND;
+        }
+
+        if (!Boolean.TRUE.equals(product.active())) {
+            return PRODUCT_INACTIVE;
+        }
+
+        if (product.stock() == null || product.stock() < quantity) {
+            return INSUFFICIENT_STOCK;
+        }
+
+        return null;
+    }
+
+    private ProductInternalResponse getProduct(Long productId) {
+        return productServiceClient.getProductsByIds(
+                        Collections.singletonList(productId))
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new BusinessException(CartErrorMessage.PRODUCT_NOT_AVAILABLE));
+    }
+
+    private void validateAvailableProduct(ProductInternalResponse product, Integer requestedQuantity) {
+        if (!Boolean.TRUE.equals(product.active())) {
+            throw new BusinessException(CartErrorMessage.PRODUCT_NOT_AVAILABLE);
+        }
+
+        if (product.stock() == null || product.stock() < requestedQuantity) {
+            throw new BusinessException(CartErrorMessage.PRODUCT_NOT_AVAILABLE);
+        }
     }
 }

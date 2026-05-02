@@ -37,6 +37,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -176,13 +178,15 @@ public class OrderServiceImpl implements OrderService {
 
 
     @Override
+    @Transactional
     public OrderResponse checkout(CheckoutRequest request) {
 
         Long userId = SecurityUtils.getUserId();
 
         CartInternalResponse cart = getCart(userId);
-        Map<Long, ProductInternalResponse> productMap = getProductMap(cart);
-        List<OrderItem> items = buildOrderItems(cart, productMap);
+        List<CartInternalItem> selectedCartItems = getSelectedCartItems(cart, request.selectedProductIds());
+        Map<Long, ProductInternalResponse> productMap = getProductMap(selectedCartItems);
+        List<OrderItem> items = buildOrderItems(selectedCartItems, productMap);
         BigDecimal totalPrice = calculateTotal(items);
         AddressInternalResponse address = userServiceClient.getAddress(userId, request.addressId());
         Order order = createWaitingPaymentOrder(userId, items, totalPrice, address);
@@ -204,8 +208,37 @@ public class OrderServiceImpl implements OrderService {
     }
 
 
-    private Map<Long, ProductInternalResponse> getProductMap(CartInternalResponse cart) {
-        List<Long> ids = cart.items().stream()
+    private List<CartInternalItem> getSelectedCartItems(CartInternalResponse cart, List<Long> selectedProductIds) {
+        if (selectedProductIds == null || selectedProductIds.isEmpty()) {
+            throw new BusinessException(OrderErrorMessage.ORDER_IS_EMPTY);
+        }
+
+        Set<Long> selectedIds = selectedProductIds.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (selectedIds.isEmpty()) {
+            throw new BusinessException(OrderErrorMessage.ORDER_IS_EMPTY);
+        }
+
+        List<CartInternalItem> selectedItems = cart.items().stream()
+                .filter(item -> selectedIds.contains(item.productId()))
+                .toList();
+
+        if (selectedItems.size() != selectedIds.size()) {
+            throw new BusinessException(OrderErrorMessage.PRODUCT_NOT_FOUND);
+        }
+
+        if (selectedItems.isEmpty()) {
+            throw new BusinessException(OrderErrorMessage.ORDER_IS_EMPTY);
+        }
+
+        return selectedItems;
+    }
+
+
+    private Map<Long, ProductInternalResponse> getProductMap(List<CartInternalItem> cartItems) {
+        List<Long> ids = cartItems.stream()
                 .map(CartInternalItem::productId)
                 .toList();
 
@@ -214,15 +247,12 @@ public class OrderServiceImpl implements OrderService {
     }
 
 
-    private List<OrderItem> buildOrderItems(CartInternalResponse cart,
+    private List<OrderItem> buildOrderItems(List<CartInternalItem> cartItems,
                                             Map<Long, ProductInternalResponse> productMap) {
-        return cart.items().stream()
+        return cartItems.stream()
                 .map(ci -> {
                     ProductInternalResponse p = productMap.get(ci.productId());
-
-                    if (p == null) throw new BusinessException(OrderErrorMessage.PRODUCT_NOT_FOUND);
-                    if (!Boolean.TRUE.equals(p.active())) throw new BusinessException(OrderErrorMessage.PRODUCT_INACTIVE);
-                    if (p.stock() < ci.quantity()) throw new BusinessException(OrderErrorMessage.INSUFFICIENT_STOCK);
+                    validateProductForCheckout(p, ci.quantity());
 
                     OrderItem item = new OrderItem();
                     item.setProductId(p.id());
@@ -233,6 +263,20 @@ public class OrderServiceImpl implements OrderService {
                     return item;
                 })
                 .toList();
+    }
+
+    private void validateProductForCheckout(ProductInternalResponse product, Integer quantity) {
+        if (product == null) {
+            throw new BusinessException(OrderErrorMessage.PRODUCT_NOT_FOUND);
+        }
+
+        if (!Boolean.TRUE.equals(product.active())) {
+            throw new BusinessException(OrderErrorMessage.PRODUCT_INACTIVE);
+        }
+
+        if (product.stock() == null || product.stock() < quantity) {
+            throw new BusinessException(OrderErrorMessage.INSUFFICIENT_STOCK);
+        }
     }
 
 

@@ -6,10 +6,13 @@ import com.demir.ecommerce.commonlib.event.payment.PaymentSucceededEvent;
 import com.demir.ecommerce.commonlib.event.stock.StockReservationFailedEvent;
 import com.demir.ecommerce.commonlib.messaging.RabbitMqConstants;
 import com.demir.ecommerce.orderservice.entity.Order;
+import com.demir.ecommerce.orderservice.entity.OrderItem;
 import com.demir.ecommerce.orderservice.entity.OrderStatus;
 import com.demir.ecommerce.orderservice.repository.OrderRepository;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Component
 public class OrderSagaEventListener {
@@ -26,7 +29,7 @@ public class OrderSagaEventListener {
     @RabbitListener(queues = RabbitMqConstants.ORDER_PAYMENT_SUCCEEDED_QUEUE)
     public void handlePaymentSucceeded(PaymentSucceededEvent event) {
 
-        Order order = orderRepository.findById(event.orderId())
+        Order order = orderRepository.findWithItemsById(event.orderId())
                 .orElse(null);
 
         if (order == null) {
@@ -40,10 +43,15 @@ public class OrderSagaEventListener {
         order.setStatus(OrderStatus.CONFIRMED);
         orderRepository.save(order);
 
+        List<Long> productIds = order.getItems().stream()
+                .map(OrderItem::getProductId)
+                .toList();
+
         orderEventPublisher.publishCartClearRequested(
                 new CartClearRequestedEvent(
                         order.getId(),
-                        order.getUserId()
+                        order.getUserId(),
+                        productIds
                 )
         );
     }
