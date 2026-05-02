@@ -1,12 +1,19 @@
 import { Link } from 'react-router-dom';
 
 function formatMoney(value) {
-  if (value == null) return '—';
+  if (value == null) return '-';
   const n = Number(value);
   return `${n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TL`;
 }
 
-export default function CartItem({ item }) {
+function unavailableText(reason) {
+  if (reason === 'PRODUCT_NOT_FOUND') return 'Urun artik mevcut degil';
+  if (reason === 'PRODUCT_INACTIVE') return 'Urun su anda satista degil';
+  if (reason === 'INSUFFICIENT_STOCK') return 'Stok yetersiz';
+  return 'Urun satin almaya uygun degil';
+}
+
+export default function CartItem({ item, selected = false, onSelectionChange }) {
   const {
     productId,
     productName,
@@ -14,21 +21,34 @@ export default function CartItem({ item }) {
     unitPrice,
     quantity,
     totalPrice,
+    available = true,
+    unavailableReason,
   } = item;
+  const canSelect = available;
 
   return (
-    <div className="flex gap-4 bg-white p-4 rounded-lg border border-gray-100">
+    <div className={`flex gap-4 p-4 rounded-lg border ${available ? 'bg-white border-gray-100' : 'bg-amber-50/60 border-amber-200'}`}>
+      <div className="flex items-center">
+        <input
+          type="checkbox"
+          className="h-4 w-4 accent-primary"
+          checked={selected && canSelect}
+          disabled={!canSelect}
+          onChange={(event) => onSelectionChange?.(productId, event.target.checked)}
+          aria-label="Siparis icin sec"
+        />
+      </div>
       <Link
         to={`/product/${productId}`}
         className="w-24 h-24 shrink-0 bg-gray-50 rounded-lg overflow-hidden block ring-offset-2 hover:ring-2 hover:ring-primary/40 transition-shadow"
-        title="Ürün detayına git"
+        title="Urun detayina git"
       >
         <img
-          src={imageUrl || 'https://via.placeholder.com/100x100?text=Ürün'}
+          src={imageUrl || 'https://via.placeholder.com/100x100?text=Urun'}
           alt={productName}
           className="w-full h-full object-contain p-2"
           onError={(e) => {
-            e.target.src = 'https://via.placeholder.com/100x100?text=Ürün';
+            e.target.src = 'https://via.placeholder.com/100x100?text=Urun';
           }}
         />
       </Link>
@@ -44,10 +64,17 @@ export default function CartItem({ item }) {
         <p className="text-sm text-gray-600 mt-2">
           Adet: <span className="font-semibold text-secondary">{quantity}</span>
         </p>
+        {!available && (
+          <p className="text-xs font-semibold text-amber-700 mt-2">
+            {unavailableText(unavailableReason)}
+          </p>
+        )}
       </div>
 
       <div className="flex flex-col items-end justify-center shrink-0">
-        <span className="text-sm font-semibold text-primary">{formatMoney(totalPrice)}</span>
+        <span className={`text-sm font-semibold ${available ? 'text-primary' : 'text-gray-400 line-through'}`}>
+          {formatMoney(totalPrice)}
+        </span>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { HiShoppingBag } from 'react-icons/hi2';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -11,7 +11,7 @@ import Button from '../components/ui/Button';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 
 function formatMoney(value) {
-  if (value == null) return '—';
+  if (value == null) return '-';
   return `${Number(value).toLocaleString('tr-TR', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -24,11 +24,12 @@ function isDefaultAddress(a) {
 
 function addressSummary(row) {
   const line = row.fullAddress || row.addressLine || '';
-  return `${row.district || ''}, ${row.city || ''} — ${line}`.trim();
+  return `${row.district || ''}, ${row.city || ''} - ${line}`.trim();
 }
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated } = useAuth();
   const { cart, fetchCart } = useCart();
   const { showToast } = useToast();
@@ -39,6 +40,18 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState(null);
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
   const [addressFormLoading, setAddressFormLoading] = useState(false);
+
+  const routeSelectedProductIds = Array.isArray(location.state?.selectedProductIds)
+    ? location.state.selectedProductIds.map(Number).filter((id) => !Number.isNaN(id))
+    : null;
+  const selectedProductIds = routeSelectedProductIds
+    ?? (cart.items || []).filter((item) => item.available !== false).map((item) => item.productId);
+  const selectedProductIdSet = new Set(selectedProductIds);
+  const selectedItems = (cart.items || []).filter((item) => selectedProductIdSet.has(item.productId));
+  const selectedTotalPrice = selectedItems.reduce(
+    (sum, item) => sum + Number(item.totalPrice || 0),
+    0
+  );
 
   const loadAddresses = useCallback(
     async (preferSelectId) => {
@@ -64,7 +77,7 @@ export default function CheckoutPage() {
           setShowNewAddressForm(true);
         }
       } catch {
-        showToast('Adresler yüklenemedi', 'error');
+        showToast('Adresler yuklenemedi', 'error');
         setAddresses([]);
       } finally {
         setAddressesLoading(false);
@@ -106,11 +119,15 @@ export default function CheckoutPage() {
 
   const handleCreateOrder = async () => {
     if (!isAuthenticated) {
-      showToast('Oturum bilgisi bulunamadı', 'error');
+      showToast('Oturum bilgisi bulunamadi', 'error');
+      return;
+    }
+    if (selectedProductIds.length === 0) {
+      showToast('Siparis icin en az bir urun secmelisiniz', 'error');
       return;
     }
     if (selectedAddressId == null) {
-      showToast('Lütfen bir teslimat adresi seçin veya ekleyin', 'error');
+      showToast('Lutfen bir teslimat adresi secin veya ekleyin', 'error');
       return;
     }
 
@@ -118,22 +135,23 @@ export default function CheckoutPage() {
     try {
       const { data: rest } = await orderService.checkout({
         addressId: selectedAddressId,
+        selectedProductIds,
       });
       const created = rest.data;
       const oid = created?.id ?? created?.orderId;
       if (oid == null) {
-        showToast('Sipariş yanıtı geçersiz', 'error');
+        showToast('Siparis yaniti gecersiz', 'error');
         return;
       }
 
-      showToast(rest.message || 'Sipariş oluşturuldu. Ödeme adımına yönlendiriliyorsunuz.', 'success');
+      showToast(rest.message || 'Siparis olusturuldu. Odeme adimina yonlendiriliyorsunuz.', 'success');
 
       navigate(`/checkout/pay/${oid}`, {
         replace: true,
         state: { checkoutOrder: created },
       });
     } catch (error) {
-      showToast(error.message || 'Sipariş oluşturulamadı', 'error');
+      showToast(error.message || 'Siparis olusturulamadi', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -143,25 +161,30 @@ export default function CheckoutPage() {
     return (
       <div className="max-w-7xl mx-auto px-4 py-16 text-center">
         <HiShoppingBag className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-        <p className="text-gray-500 text-lg mb-4">Sepetiniz boş — önce ürün ekleyin.</p>
-        <Button onClick={() => navigate('/')}>Alışverişe Başla</Button>
+        <p className="text-gray-500 text-lg mb-4">Sepetiniz bos. Once urun ekleyin.</p>
+        <Button onClick={() => navigate('/')}>Alisverise Basla</Button>
       </div>
     );
   }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold text-secondary mb-2">Sipariş oluştur</h1>
+      <h1 className="text-2xl font-bold text-secondary mb-2">Siparis olustur</h1>
       <p className="text-sm text-gray-500 mb-6">
-        Teslimat adresinizi seçin ve siparişi oluşturun. Ödeme bir sonraki adımda alınır. Adreslerinizi{' '}
+        Teslimat adresinizi secin ve secili urunlerle siparis olusturun. Adreslerinizi{' '}
         <Link to="/account/addresses" className="text-primary font-medium hover:underline">
-          hesabınızdan
+          hesabinizdan
         </Link>{' '}
-        da yönetebilirsiniz.
+        da yonetebilirsiniz.
       </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
+          {selectedProductIds.length === 0 && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              Siparis olusturmak icin sepetten en az bir uygun urun secin.
+            </div>
+          )}
           <div className="bg-white rounded-lg border border-gray-100 p-6">
             <h2 className="text-lg font-bold text-secondary mb-4">Teslimat adresi</h2>
 
@@ -190,11 +213,11 @@ export default function CheckoutPage() {
                           <p className="font-semibold text-secondary">
                             {addr.title || 'Adres'}
                             {isDefaultAddress(addr) && (
-                              <span className="ml-2 text-xs font-normal text-primary">(varsayılan)</span>
+                              <span className="ml-2 text-xs font-normal text-primary">(varsayilan)</span>
                             )}
                           </p>
                           <p className="text-gray-600 mt-0.5">
-                            {addr.recipientName || addr.fullName} — {addr.phone || addr.phoneNumber}
+                            {addr.recipientName || addr.fullName} - {addr.phone || addr.phoneNumber}
                           </p>
                           <p className="text-gray-500 mt-1 wrap-break-word">{addressSummary(addr)}</p>
                         </div>
@@ -208,7 +231,7 @@ export default function CheckoutPage() {
                     className="text-sm font-semibold text-primary hover:underline"
                     onClick={() => setShowNewAddressForm(true)}
                   >
-                    + Farklı bir adres ekle
+                    + Farkli bir adres ekle
                   </button>
                 ) : (
                   <div className="mt-4 pt-4 border-t border-gray-100">
@@ -225,7 +248,7 @@ export default function CheckoutPage() {
             ) : (
               <div>
                 <p className="text-sm text-gray-600 mb-4">
-                  Kayıtlı adresiniz yok. Sipariş vermek için aşağıya teslimat adresini girin.
+                  Kayitli adresiniz yok. Siparis vermek icin teslimat adresini girin.
                 </p>
                 <AddressForm
                   onSubmit={handleInlineAddressCreate}
@@ -241,22 +264,22 @@ export default function CheckoutPage() {
             fullWidth
             size="lg"
             loading={submitting}
-            disabled={selectedAddressId == null || addressesLoading}
+            disabled={selectedAddressId == null || addressesLoading || selectedProductIds.length === 0}
             onClick={handleCreateOrder}
           >
-            Siparişi oluştur ve ödemeye geç
+            Siparisi olustur ve odemeye gec
           </Button>
         </div>
 
         <div className="lg:col-span-1">
           <div className="bg-white rounded-lg border border-gray-100 p-6 sticky top-24">
-            <h2 className="text-lg font-bold text-secondary mb-4">Sipariş özeti</h2>
+            <h2 className="text-lg font-bold text-secondary mb-4">Siparis ozeti</h2>
 
             <div className="space-y-3 max-h-64 overflow-y-auto mb-4">
-              {cart.items?.map((item) => (
+              {selectedItems.map((item) => (
                 <div key={item.id ?? item.productId} className="flex justify-between text-sm gap-2">
                   <span className="text-gray-600 truncate">
-                    {item.productName} × {item.quantity}
+                    {item.productName} x {item.quantity}
                   </span>
                   <span className="font-medium shrink-0">
                     {formatMoney(
@@ -272,11 +295,11 @@ export default function CheckoutPage() {
             <div className="border-t pt-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Kargo</span>
-                <span className="font-medium text-success">Ücretsiz</span>
+                <span className="font-medium text-success">Ucretsiz</span>
               </div>
               <div className="flex justify-between text-lg font-bold">
                 <span className="text-secondary">Toplam</span>
-                <span className="text-primary">{formatMoney(cart.totalPrice)}</span>
+                <span className="text-primary">{formatMoney(selectedTotalPrice)}</span>
               </div>
             </div>
           </div>

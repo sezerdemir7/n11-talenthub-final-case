@@ -36,6 +36,7 @@ export default function ProductDetailPage() {
   }, [id]);
 
   const handleAddToCart = async () => {
+    if (isOutOfStock || isInactive || addingToCart) return;
     setAddingToCart(true);
     await addItem(product.id, quantity, {
       productName: product.name,
@@ -51,6 +52,7 @@ export default function ProductDetailPage() {
 
   const detail = product.detail;
   const isOutOfStock = product.stock !== null && product.stock <= 0;
+  const isInactive = product.active === false;
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
@@ -161,13 +163,13 @@ export default function ProductDetailPage() {
             <Button
               onClick={handleAddToCart}
               loading={addingToCart}
-              disabled={isOutOfStock}
+              disabled={isOutOfStock || isInactive}
               size="lg"
               fullWidth
               className="mb-6"
             >
               <HiShoppingCart className="h-5 w-5 mr-2" />
-              {isOutOfStock ? 'Stokta Yok' : 'Sepete Ekle'}
+              {isOutOfStock ? 'Stokta Yok' : isInactive ? 'Satışa Kapalı' : 'Sepete Ekle'}
             </Button>
 
             {/* Features */}

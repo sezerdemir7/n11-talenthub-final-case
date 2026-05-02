@@ -19,7 +19,11 @@ function normalizeCart(restData) {
   return {
     cartId: restData.cartId ?? null,
     userId: restData.userId ?? null,
-    items: restData.items || [],
+    items: (restData.items || []).map((item) => ({
+      ...item,
+      available: item.available !== false,
+      unavailableReason: item.unavailableReason ?? null,
+    })),
     totalPrice: restData.totalPrice != null ? Number(restData.totalPrice) : 0,
   };
 }

@@ -1,16 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { HiTruck, HiShieldCheck, HiCreditCard } from 'react-icons/hi2';
 import { productService } from '../services/productService';
 import ProductGrid from '../components/product/ProductGrid';
 import Pagination from '../components/product/Pagination';
 import CategoryBar from '../components/layout/CategoryBar';
-
-const VALUE_PROPS = [
-  { icon: HiTruck, title: 'Ücretsiz Kargo', desc: '150 TL ve üzeri siparişlerde' },
-  { icon: HiShieldCheck, title: 'Güvenli Alışveriş', desc: '256-bit SSL ile korumalı' },
-  { icon: HiCreditCard, title: 'Kolay Ödeme', desc: 'Kredi/banka kartı desteği' },
-];
 
 export default function HomePage() {
   const [searchParams] = useSearchParams();
@@ -55,26 +48,6 @@ export default function HomePage() {
   return (
     <>
       <CategoryBar />
-
-      {!isFiltered && (
-        <div className="bg-secondary">
-          <div className="max-w-7xl mx-auto px-4 py-8">
-            <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/10">
-              {VALUE_PROPS.map(({ icon: Icon, title, desc }) => (
-                <div key={title} className="flex items-center gap-4 py-4 sm:py-0 sm:px-8 first:pl-0 last:pr-0">
-                  <div className="h-11 w-11 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                    <Icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-white">{title}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">

@@ -72,6 +72,8 @@ export function guestLinesToCartState(lines) {
       unitPrice: unit,
       quantity: qty,
       totalPrice: unit * qty,
+      available: true,
+      unavailableReason: null,
     };
   });
   const totalPrice = items.reduce((s, it) => s + Number(it.totalPrice || 0), 0);
