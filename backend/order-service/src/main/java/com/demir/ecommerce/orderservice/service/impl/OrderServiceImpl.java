@@ -2,7 +2,6 @@ package com.demir.ecommerce.orderservice.service.impl;
 
 import com.demir.ecommerce.commonlib.dto.PageResponse;
 import com.demir.ecommerce.commonlib.event.order.OrderCancelledEvent;
-import com.demir.ecommerce.commonlib.event.order.OrderCreatedEvent;
 import com.demir.ecommerce.commonlib.event.order.OrderItemEvent;
 import com.demir.ecommerce.commonlib.excepption.BusinessException;
 import com.demir.ecommerce.commonlib.excepption.message.GeneralErrorMessage;
@@ -191,8 +190,6 @@ public class OrderServiceImpl implements OrderService {
         AddressInternalResponse address = userServiceClient.getAddress(userId, request.addressId());
         Order order = createWaitingPaymentOrder(userId, items, totalPrice, address);
 
-        orderEventPublisher.publishOrderCreated(toOrderCreatedEvent(order));
-
         return mapToResponse(order);
     }
 
@@ -308,26 +305,6 @@ public class OrderServiceImpl implements OrderService {
         order.setItems(items);
 
         return orderRepository.save(order);
-    }
-
-    // ================= EVENT MAPPER =================
-
-    private OrderCreatedEvent toOrderCreatedEvent(Order order) {
-        List<OrderItemEvent> items = order.getItems().stream()
-                .map(i -> new OrderItemEvent(
-                        i.getProductId(),
-                        i.getProductName(),
-                        i.getUnitPrice(),
-                        i.getQuantity()
-                ))
-                .toList();
-
-        return new OrderCreatedEvent(
-                order.getId(),
-                order.getUserId(),
-                order.getTotalPrice(),
-                items
-        );
     }
 
     // ================= MAPPERS =================

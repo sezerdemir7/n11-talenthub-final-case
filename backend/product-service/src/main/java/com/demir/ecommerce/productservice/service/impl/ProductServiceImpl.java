@@ -154,6 +154,8 @@ public class ProductServiceImpl implements ProductService {
                 sellerId,
                 null,
                 null,
+                null,
+                null,
                 null
         );
 

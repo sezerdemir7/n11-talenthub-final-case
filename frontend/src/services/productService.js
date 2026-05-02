@@ -9,18 +9,19 @@ const PRODUCT_ENDPOINTS = {
 
 export const productService = {
   getAll: (params = {}) => {
-    const { page = 0, size = 12, sort, keyword, categoryId, sellerId, minPrice, maxPrice, active } = params;
+    const { page = 0, size = 12, keyword, categoryId, sellerId, minPrice, maxPrice, active, brand, sortBy } = params;
     return api.get(PRODUCT_ENDPOINTS.LIST, {
       params: {
         page,
         size,
-        sort,
         keyword: keyword || undefined,
         categoryId: categoryId || undefined,
         sellerId: sellerId || undefined,
         minPrice: minPrice || undefined,
         maxPrice: maxPrice || undefined,
         active: active ?? undefined,
+        brand: brand || undefined,
+        sortBy: sortBy || undefined,
       },
     });
   },

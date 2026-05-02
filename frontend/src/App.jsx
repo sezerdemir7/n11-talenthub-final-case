@@ -2,6 +2,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { ToastProvider } from './context/ToastContext';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { NotificationProvider } from './context/NotificationContext';
 import ToastContainer from './components/ui/Toast';
 import AppRoutes from './routes/AppRoutes';
 
@@ -10,10 +11,12 @@ export default function App() {
     <BrowserRouter>
       <ToastProvider>
         <AuthProvider>
-          <CartProvider>
-            <AppRoutes />
-            <ToastContainer />
-          </CartProvider>
+          <NotificationProvider>
+            <CartProvider>
+              <AppRoutes />
+              <ToastContainer />
+            </CartProvider>
+          </NotificationProvider>
         </AuthProvider>
       </ToastProvider>
     </BrowserRouter>

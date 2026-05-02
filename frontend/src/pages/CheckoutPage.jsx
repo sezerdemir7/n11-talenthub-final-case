@@ -144,7 +144,7 @@ export default function CheckoutPage() {
         return;
       }
 
-      showToast(rest.message || 'Siparis olusturuldu. Odeme adimina yonlendiriliyorsunuz.', 'success');
+      showToast('Odeme adimina yonlendiriliyorsunuz.', 'success');
 
       navigate(`/checkout/pay/${oid}`, {
         replace: true,

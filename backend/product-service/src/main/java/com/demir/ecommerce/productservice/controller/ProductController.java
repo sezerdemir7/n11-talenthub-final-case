@@ -72,7 +72,9 @@ public class ProductController {
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) Boolean active,
-            @PageableDefault(size = 12, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) SortOption sortBy,
+            @PageableDefault(size = 12) Pageable pageable
     ) {
         ProductFilterRequest filter = new ProductFilterRequest(
                 keyword,
@@ -80,7 +82,9 @@ public class ProductController {
                 sellerId,
                 minPrice,
                 maxPrice,
-                active
+                active,
+                brand,
+                sortBy
         );
 
         Page<ProductListResponse> response = productService.search(filter, pageable);

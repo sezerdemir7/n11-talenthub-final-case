@@ -46,7 +46,12 @@ public class CartServiceImpl implements CartService {
         List<CartItem> cartItems = cart.getItems();
 
         if (cartItems.isEmpty()) {
-            throw new BusinessException(CartErrorMessage.CART_IS_EMPTY);
+            return new CartResponse(
+                    cart.getId(),
+                    userId,
+                    Collections.emptyList(),
+                    BigDecimal.ZERO
+            );
         }
 
         List<Long> productIds = cartItems.stream()

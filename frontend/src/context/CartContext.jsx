@@ -142,6 +142,82 @@ export function CartProvider({ children }) {
     showToast('Sepet temizlendi', 'success');
   };
 
+  const increaseItemQuantity = async (productId) => {
+    const pid = Number(productId);
+    if (!pid) return;
+
+    if (isAuthenticated) {
+      try {
+        await cartService.addItem({ productId: pid, quantity: 1 });
+        await fetchCart();
+      } catch (error) {
+        showToast(error.message || 'Urun adedi artirilamadi', 'error');
+      }
+      return;
+    }
+
+    try {
+      const lines = loadGuestCartLines();
+      const existing = lines.find((line) => Number(line.productId) === pid);
+      if (!existing) return;
+
+      const merged = mergeGuestCartLine(lines, {
+        productId: pid,
+        quantity: 1,
+        productName: existing.productName,
+        imageUrl: existing.imageUrl,
+        unitPrice: existing.unitPrice,
+      });
+      saveGuestCartLines(merged);
+      setCart(guestLinesToCartState(merged));
+    } catch (error) {
+      showToast(error.message || 'Urun adedi artirilamadi', 'error');
+    }
+  };
+
+  const decreaseItemQuantity = async (productId) => {
+    const pid = Number(productId);
+    if (!pid) return;
+
+    if (isAuthenticated) {
+      try {
+        const currentItems = Array.isArray(cart.items) ? cart.items : [];
+        const updatedItems = currentItems
+          .map((item) => {
+            if (Number(item.productId) !== pid) return item;
+            return { ...item, quantity: Math.max(0, Number(item.quantity || 0) - 1) };
+          })
+          .filter((item) => Number(item.quantity || 0) > 0);
+
+        await cartService.clearCart();
+        for (const item of updatedItems) {
+          await cartService.addItem({
+            productId: Number(item.productId),
+            quantity: Number(item.quantity || 0),
+          });
+        }
+        await fetchCart();
+      } catch (error) {
+        showToast(error.message || 'Urun adedi azaltilamadi', 'error');
+      }
+      return;
+    }
+
+    try {
+      const lines = loadGuestCartLines();
+      const updated = lines
+        .map((line) => {
+          if (Number(line.productId) !== pid) return line;
+          return { ...line, quantity: Math.max(0, Number(line.quantity || 0) - 1) };
+        })
+        .filter((line) => Number(line.quantity || 0) > 0);
+      saveGuestCartLines(updated);
+      setCart(guestLinesToCartState(updated));
+    } catch (error) {
+      showToast(error.message || 'Urun adedi azaltilamadi', 'error');
+    }
+  };
+
   const itemCount = cart.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
 
   const value = {
@@ -150,6 +226,8 @@ export function CartProvider({ children }) {
     itemCount,
     fetchCart,
     addItem,
+    increaseItemQuantity,
+    decreaseItemQuantity,
     clearCart,
   };
 

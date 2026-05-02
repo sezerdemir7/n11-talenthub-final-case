@@ -13,7 +13,13 @@ function unavailableText(reason) {
   return 'Urun satin almaya uygun degil';
 }
 
-export default function CartItem({ item, selected = false, onSelectionChange }) {
+export default function CartItem({
+  item,
+  selected = false,
+  onSelectionChange,
+  onIncreaseQuantity,
+  onDecreaseQuantity,
+}) {
   const {
     productId,
     productName,
@@ -61,9 +67,33 @@ export default function CartItem({ item, selected = false, onSelectionChange }) 
           {productName}
         </Link>
         <p className="text-xs text-gray-500 mt-1">Birim: {formatMoney(unitPrice)}</p>
-        <p className="text-sm text-gray-600 mt-2">
-          Adet: <span className="font-semibold text-secondary">{quantity}</span>
-        </p>
+        <div className="flex items-center gap-2 mt-2">
+          <p className="text-sm text-gray-600">
+            Adet: <span className="font-semibold text-secondary">{quantity}</span>
+          </p>
+          {available && (
+            <>
+              <button
+                type="button"
+                onClick={() => onDecreaseQuantity?.(productId)}
+                className="h-7 w-7 rounded-md border border-gray-200 text-gray-700 hover:border-primary hover:text-primary transition-colors cursor-pointer"
+                aria-label="Adedi azalt"
+                title="Adedi azalt"
+              >
+                -
+              </button>
+              <button
+                type="button"
+                onClick={() => onIncreaseQuantity?.(productId)}
+                className="h-7 w-7 rounded-md border border-gray-200 text-gray-700 hover:border-primary hover:text-primary transition-colors cursor-pointer"
+                aria-label="Adedi artir"
+                title="Adedi artir"
+              >
+                +
+              </button>
+            </>
+          )}
+        </div>
         {!available && (
           <p className="text-xs font-semibold text-amber-700 mt-2">
             {unavailableText(unavailableReason)}

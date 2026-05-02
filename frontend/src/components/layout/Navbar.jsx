@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { hasRole } from '../../utils/jwt';
+import NotificationBell from '../notification/NotificationBell';
 
 export default function Navbar() {
   const { isAuthenticated, user, logout } = useAuth();
@@ -68,6 +69,7 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-1 ml-auto">
             {isAuthenticated ? (
               <>
+                <NotificationBell />
                 {isAdmin && (
                   <Link
                     to="/admin"
@@ -178,6 +180,9 @@ export default function Navbar() {
         <div className="md:hidden border-t border-gray-100 bg-white px-4 py-3 space-y-1">
           {isAuthenticated ? (
             <>
+              <div className="px-2 py-2.5">
+                <NotificationBell />
+              </div>
               <div className="flex items-center gap-3 px-2 py-3 border-b border-gray-100 mb-2">
                 <div className="h-9 w-9 rounded-full bg-primary/15 flex items-center justify-center">
                   <span className="text-sm font-bold text-primary">{userInitial}</span>

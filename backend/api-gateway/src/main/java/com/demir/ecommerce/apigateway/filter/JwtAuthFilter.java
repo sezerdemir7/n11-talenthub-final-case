@@ -37,7 +37,8 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             "/api/v1/products",
             "/api/v1/products/search/**",
             "api/v1/products/slug/**",
-            "/api/v1/categories"
+            "/api/v1/categories/filters",
+            "/ws/**"
     );
 
     public JwtAuthFilter(JwtService jwtService) {

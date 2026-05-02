@@ -5,27 +5,33 @@ import jakarta.validation.constraints.DecimalMin;
 
 import java.math.BigDecimal;
 
-@Schema(description = "Ürün filtreleme isteği")
+@Schema(description = "Product filtering request")
 public record ProductFilterRequest(
 
-        @Schema(description = "Arama anahtar kelimesi", example = "iphone")
+        @Schema(description = "Search keyword", example = "iphone")
         String keyword,
 
-        @Schema(description = "Kategori ID", example = "1")
+        @Schema(description = "Category ID — includes subcategories", example = "1")
         Long categoryId,
 
-        @Schema(description = "Satıcı ID", example = "10")
+        @Schema(description = "Seller ID", example = "10")
         Long sellerId,
 
-        @Schema(description = "Minimum fiyat", example = "1000")
+        @Schema(description = "Minimum price", example = "1000")
         @DecimalMin(value = "0.0", inclusive = true)
         BigDecimal minPrice,
 
-        @Schema(description = "Maximum fiyat", example = "50000")
+        @Schema(description = "Maximum price", example = "50000")
         @DecimalMin(value = "0.0", inclusive = true)
         BigDecimal maxPrice,
 
-        @Schema(description = "Aktif ürünler", example = "true")
-        Boolean active
+        @Schema(description = "Active products only", example = "true")
+        Boolean active,
+
+        @Schema(description = "Brand filter", example = "Apple")
+        String brand,
+
+        @Schema(description = "Sorting option", example = "NEWEST")
+        SortOption sortBy
 ) {
 }

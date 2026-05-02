@@ -1,6 +1,8 @@
 package com.demir.ecommerce.orderservice.messaging;
 
 import com.demir.ecommerce.commonlib.event.cart.CartClearRequestedEvent;
+import com.demir.ecommerce.commonlib.event.order.OrderCreatedEvent;
+import com.demir.ecommerce.commonlib.event.order.OrderItemEvent;
 import com.demir.ecommerce.commonlib.event.payment.PaymentFailedEvent;
 import com.demir.ecommerce.commonlib.event.payment.PaymentSucceededEvent;
 import com.demir.ecommerce.commonlib.event.stock.StockReservationFailedEvent;
@@ -42,6 +44,8 @@ public class OrderSagaEventListener {
 
         order.setStatus(OrderStatus.CONFIRMED);
         orderRepository.save(order);
+
+        orderEventPublisher.publishOrderCreated(toOrderCreatedEvent(order));
 
         List<Long> productIds = order.getItems().stream()
                 .map(OrderItem::getProductId)
@@ -86,5 +90,23 @@ public class OrderSagaEventListener {
 
         order.setStatus(OrderStatus.CANCELLED);
         orderRepository.save(order);
+    }
+
+    private OrderCreatedEvent toOrderCreatedEvent(Order order) {
+        List<OrderItemEvent> items = order.getItems().stream()
+                .map(i -> new OrderItemEvent(
+                        i.getProductId(),
+                        i.getProductName(),
+                        i.getUnitPrice(),
+                        i.getQuantity()
+                ))
+                .toList();
+
+        return new OrderCreatedEvent(
+                order.getId(),
+                order.getUserId(),
+                order.getTotalPrice(),
+                items
+        );
     }
 }
