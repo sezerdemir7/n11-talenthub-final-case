@@ -23,9 +23,7 @@ export function AuthProvider({ children }) {
     } catch {
       // Logout API fails silently — tokens still cleared client-side
     } finally {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('user');
+      localStorage.clear();
       setUser(null);
       setToken(null);
     }
