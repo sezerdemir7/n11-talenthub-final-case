@@ -80,6 +80,20 @@ class JwtAuthFilterTest {
             verify(chain).filter(exchange);
             verify(jwtService, never()).extractAllClaims(org.mockito.ArgumentMatchers.anyString());
         }
+
+        @Test
+        @DisplayName("Should bypass auth for product listing")
+        void filter_getProducts_callsChain() {
+            MockServerWebExchange exchange = MockServerWebExchange.from(
+                    MockServerHttpRequest.get("/api/v1/products")
+            );
+            when(chain.filter(exchange)).thenReturn(Mono.empty());
+
+            filter().filter(exchange, chain).block();
+
+            verify(chain).filter(exchange);
+            verify(jwtService, never()).extractAllClaims(org.mockito.ArgumentMatchers.anyString());
+        }
     }
 
     @Nested
@@ -91,6 +105,19 @@ class JwtAuthFilterTest {
         void filter_missingAuthorizationHeader_returnsUnauthorized() {
             MockServerWebExchange exchange = MockServerWebExchange.from(
                     MockServerHttpRequest.get("/api/v1/orders")
+            );
+
+            filter().filter(exchange, chain).block();
+
+            assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+            verify(chain, never()).filter(org.mockito.ArgumentMatchers.any());
+        }
+
+        @Test
+        @DisplayName("Should require token for product creation")
+        void filter_postProductsWithoutAuthorization_returnsUnauthorized() {
+            MockServerWebExchange exchange = MockServerWebExchange.from(
+                    MockServerHttpRequest.post("/api/v1/products")
             );
 
             filter().filter(exchange, chain).block();

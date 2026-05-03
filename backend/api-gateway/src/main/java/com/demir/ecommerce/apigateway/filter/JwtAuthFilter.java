@@ -34,9 +34,8 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             "/v3/api-docs/**",
             "/actuator/health",
             "/actuator/info",
-            "/api/v1/products",
             "/api/v1/products/search/**",
-            "api/v1/products/slug/**",
+            "/api/v1/products/slug/**",
             "/api/v1/categories/filters",
             "/ws/**"
     );
@@ -54,7 +53,7 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
 
-        if (isPublicPath(path)) {
+        if (isPublicPath(exchange.getRequest().getMethod(), path)) {
             return chain.filter(exchange);
         }
 
@@ -120,7 +119,11 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
                 .toList();
     }
 
-    private boolean isPublicPath(String path) {
+    private boolean isPublicPath(HttpMethod method, String path) {
+        if (method == HttpMethod.GET && pathMatcher.match("/api/v1/products", path)) {
+            return true;
+        }
+
         return publicPaths.stream()
                 .anyMatch(pattern -> pathMatcher.match(pattern, path));
     }
