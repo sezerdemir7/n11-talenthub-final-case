@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { HiAdjustmentsHorizontal, HiXMark, HiChevronDown } from 'react-icons/hi2';
 import { productService } from '../services/productService';
 import { categoryService } from '../services/categoryService';
+import { buildCategoryGroups, getChildrenOf } from '../utils/categoryTree';
 import ProductGrid from '../components/product/ProductGrid';
 import Pagination from '../components/product/Pagination';
 import CategoryBar from '../components/layout/CategoryBar';
@@ -25,6 +26,12 @@ export default function HomePage() {
   const [totalElements, setTotalElements] = useState(0);
   const [categories, setCategories] = useState([]);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [expandedCategoryIds, setExpandedCategoryIds] = useState(() => new Set());
+
+  const { roots, childrenByParent } = useMemo(
+    () => buildCategoryGroups(categories),
+    [categories],
+  );
 
   const keyword = searchParams.get('keyword') || '';
   const categoryId = searchParams.get('categoryId') || '';
@@ -50,6 +57,31 @@ export default function HomePage() {
     };
     fetchCategories();
   }, []);
+
+  useEffect(() => {
+    if (!categoryId || categories.length === 0) return;
+    const cat = categories.find((c) => String(c.id) === categoryId);
+    if (!cat) return;
+    const { childrenByParent: byParent } = buildCategoryGroups(categories);
+    setExpandedCategoryIds((prev) => {
+      const next = new Set(prev);
+      if (cat.parentId != null) {
+        next.add(Number(cat.parentId));
+      } else if (getChildrenOf(cat.id, byParent).length > 0) {
+        next.add(Number(cat.id));
+      }
+      return next;
+    });
+  }, [categoryId, categories]);
+
+  const toggleCategoryExpand = (id) => {
+    setExpandedCategoryIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const fetchProducts = useCallback(async () => {
     setLoading(true);
@@ -150,23 +182,94 @@ export default function HomePage() {
           >
             Tümü
           </button>
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => handleFilterChange('categoryId', String(cat.id))}
-              className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between gap-2 ${
-                String(cat.id) === filterForm.categoryId
-                  ? 'bg-primary/10 text-primary font-semibold'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              <span className="truncate">{cat.name}</span>
-              {cat.productCount > 0 && (
-                <span className="text-xs text-gray-400 shrink-0">{cat.productCount}</span>
-              )}
-            </button>
-          ))}
+          {roots.map((cat) => {
+            const children = getChildrenOf(cat.id, childrenByParent);
+            const hasChildren = children.length > 0;
+            const expanded = expandedCategoryIds.has(cat.id);
+            const rootSelected = String(cat.id) === filterForm.categoryId;
+            const childSelected = children.some(
+              (ch) => String(ch.id) === filterForm.categoryId,
+            );
+
+            return (
+              <div key={cat.id} className="space-y-0.5">
+                {hasChildren ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => toggleCategoryExpand(cat.id)}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between gap-2 ${
+                        rootSelected || childSelected
+                          ? 'bg-primary/10 text-primary font-semibold'
+                          : expanded
+                            ? 'bg-gray-50 text-secondary font-medium'
+                            : 'text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <span className="truncate flex items-center gap-2 min-w-0">
+                        <HiChevronDown
+                          className={`h-4 w-4 shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`}
+                        />
+                        {cat.name}
+                      </span>
+                      {cat.productCount > 0 && (
+                        <span className="text-xs text-gray-400 shrink-0">{cat.productCount}</span>
+                      )}
+                    </button>
+                    {expanded && (
+                      <div className="ml-2 pl-2 border-l border-gray-100 space-y-0.5">
+                        <button
+                          type="button"
+                          onClick={() => handleFilterChange('categoryId', String(cat.id))}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                            rootSelected
+                              ? 'bg-primary/10 text-primary font-semibold'
+                              : 'text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          Tümü
+                        </button>
+                        {children.map((child) => (
+                          <button
+                            key={child.id}
+                            type="button"
+                            onClick={() => handleFilterChange('categoryId', String(child.id))}
+                            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between gap-2 ${
+                              String(child.id) === filterForm.categoryId
+                                ? 'bg-primary/10 text-primary font-semibold'
+                                : 'text-gray-600 hover:bg-gray-50'
+                            }`}
+                          >
+                            <span className="truncate">{child.name}</span>
+                            {child.productCount > 0 && (
+                              <span className="text-xs text-gray-400 shrink-0">
+                                {child.productCount}
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleFilterChange('categoryId', String(cat.id))}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between gap-2 ${
+                      rootSelected
+                        ? 'bg-primary/10 text-primary font-semibold'
+                        : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="truncate">{cat.name}</span>
+                    {cat.productCount > 0 && (
+                      <span className="text-xs text-gray-400 shrink-0">{cat.productCount}</span>
+                    )}
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
