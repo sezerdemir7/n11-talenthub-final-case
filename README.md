@@ -144,7 +144,7 @@ Sistemde iki iletişim modeli vardır:
 | Senkron REST/Feign | Anlık doğrulama veya veri okuma gereken durumlar | Checkout sırasında sepet/ürün/kullanıcı bilgisi alma |
 | Asenkron RabbitMQ event | Süreç devam edebilir, telafi gerekebilir veya servisler gevşek bağlı kalmalıdır | OrderCreated, StockReserved, PaymentSucceeded, SellerSuspended |
 
-![Backend servisler arası iletişim diyagramı](../docs/backend-communication-flow.svg)
+![Backend servisler arası iletişim diyagramı](docs/backend-communication-flow.svg)
 
 ## Gateway ve Güvenlik
 
