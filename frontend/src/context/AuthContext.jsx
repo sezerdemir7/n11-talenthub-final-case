@@ -61,31 +61,31 @@ export function AuthProvider({ children }) {
 
       if (!storedToken || isTokenExpired(storedToken)) {
         const refreshToken = localStorage.getItem('refreshToken');
-        if (refreshToken && !isTokenExpired(refreshToken)) {
+        if (refreshToken) {
           authService
-            .refreshToken(refreshToken)
-            .then((response) => {
-              const parsed = parseAuthTokensFromResponseBody(response.data);
-              if (!parsed) throw new Error('Geçersiz refresh yanıtı');
-              const { accessToken: newAccess, refreshToken: newRefresh } = parsed;
-              localStorage.setItem('accessToken', newAccess);
-              if (newRefresh) {
-                localStorage.setItem('refreshToken', newRefresh);
-              }
+              .refreshToken(refreshToken)
+              .then((response) => {
+                const parsed = parseAuthTokensFromResponseBody(response.data);
+                if (!parsed) throw new Error('Geçersiz refresh yanıtı');
+                const { accessToken: newAccess, refreshToken: newRefresh } = parsed;
+                localStorage.setItem('accessToken', newAccess);
+                if (newRefresh) {
+                  localStorage.setItem('refreshToken', newRefresh);
+                }
 
-              const userInfo = getUserFromToken(newAccess);
-              localStorage.setItem('user', JSON.stringify(userInfo));
-              setToken(newAccess);
-              setUser(userInfo);
-            })
-            .catch(() => {
-              localStorage.removeItem('accessToken');
-              localStorage.removeItem('refreshToken');
-              localStorage.removeItem('user');
-              setUser(null);
-              setToken(null);
-            })
-            .finally(() => setLoading(false));
+                const userInfo = getUserFromToken(newAccess);
+                localStorage.setItem('user', JSON.stringify(userInfo));
+                setToken(newAccess);
+                setUser(userInfo);
+              })
+              .catch(() => {
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+                localStorage.removeItem('user');
+                setUser(null);
+                setToken(null);
+              })
+              .finally(() => setLoading(false));
           return;
         }
 
