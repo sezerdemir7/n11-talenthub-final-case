@@ -1,4 +1,4 @@
-package com.demir.ecommerce.productservice.controller;
+package com.demir.ecommerce.productservice.controller.internal;
 
 import com.demir.ecommerce.productservice.dto.product.ProductInternalResponse;
 

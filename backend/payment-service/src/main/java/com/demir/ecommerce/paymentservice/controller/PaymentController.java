@@ -7,12 +7,15 @@ import com.demir.ecommerce.paymentservice.dto.PaymentRequest;
 import com.demir.ecommerce.paymentservice.dto.PaymentResponse;
 import com.demir.ecommerce.paymentservice.messaging.PaymentEventPublisher;
 import com.demir.ecommerce.paymentservice.service.PaymentService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/payments")
+@Tag(name = "Payment API", description = "Handles payment operations")
 public class PaymentController {
 
     private final PaymentService paymentService;
@@ -25,6 +28,10 @@ public class PaymentController {
     }
 
     @PostMapping("/pay")
+    @Operation(
+            summary = "Process payment",
+            description = "Processes a payment request and publishes success or failure events"
+    )
     public ResponseEntity<RestResponse<PaymentResponse>> pay(
             @Valid @RequestBody PaymentRequest request
     ) {

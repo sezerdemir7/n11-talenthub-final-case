@@ -20,6 +20,7 @@ export default function RegisterSellerPage() {
   } = useForm();
 
   const password = watch('password');
+  const storeDescription = watch('storeDescription') || '';
 
   const onSubmit = async (data) => {
     setLoading(true);
@@ -115,10 +116,17 @@ export default function RegisterSellerPage() {
               <label className="block text-sm font-medium text-secondary mb-1.5">Mağaza açıklaması</label>
               <textarea
                 rows={3}
-                {...register('storeDescription')}
+                maxLength={250}
+                {...register('storeDescription', {
+                  maxLength: { value: 250, message: 'Açıklama en fazla 250 karakter olabilir' },
+                })}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-secondary focus:outline-none focus:ring-2 focus:ring-primary/30"
                 placeholder="İsteğe bağlı"
               />
+              <div className="mt-1 flex items-center justify-between text-xs">
+                <span className="text-error">{errors.storeDescription?.message}</span>
+                <span className="text-gray-400">{storeDescription.length}/250</span>
+              </div>
             </div>
             <Button type="submit" fullWidth size="lg" loading={loading}>
               Başvuruyu Gönder
