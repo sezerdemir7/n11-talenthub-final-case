@@ -1,0 +1,73 @@
+<svg width="1280" height="520" viewBox="0 0 1280 520" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10Z" fill="#334155"/>
+    </marker>
+    <style>
+      .title{font:700 26px Arial,sans-serif;fill:#0f172a}
+      .label{font:700 17px Arial,sans-serif;fill:#1e293b}
+      .small{font:500 13px Arial,sans-serif;fill:#475569}
+      .panel{fill:#fff;stroke:#0f172a;stroke-width:2}
+      .client{fill:#f8fafc;stroke:#64748b;stroke-width:2.4}
+      .gateway{fill:#ecfeff;stroke:#06b6d4;stroke-width:2.6}
+      .infra{fill:#eff6ff;stroke:#3b82f6;stroke-width:2.5}
+      .service{fill:#fffdf2;stroke:#eab308;stroke-width:2.5}
+      .queue{fill:#f5f3ff;stroke:#7c3aed;stroke-width:2.5}
+      .db{fill:#dbeafe;stroke:#2563eb;stroke-width:2.5}
+      .obs{fill:#f0fdf4;stroke:#16a34a;stroke-width:2.5}
+      .line{stroke:#334155;stroke-width:2.4;marker-end:url(#arrow)}
+      .event{stroke:#ef4444;stroke-width:2.5;stroke-dasharray:8 7;marker-end:url(#arrow)}
+      .soft{stroke:#94a3b8;stroke-width:2;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1280" height="520" fill="#fff"/>
+  <text x="44" y="48" class="title">Backend Genel Mimari</text>
+  <rect x="42" y="82" width="1196" height="360" rx="24" class="panel"/>
+
+  <rect x="80" y="222" width="140" height="78" rx="16" class="client"/>
+  <text x="116" y="254" class="label">Client</text>
+  <text x="102" y="277" class="small">Frontend / API User</text>
+
+  <rect x="292" y="222" width="150" height="78" rx="16" class="gateway"/>
+  <text x="316" y="254" class="label">API Gateway</text>
+  <text x="327" y="277" class="small">JWT + Routing</text>
+
+  <rect x="292" y="122" width="150" height="62" rx="15" class="infra"/>
+  <text x="318" y="149" class="label">Config Server</text>
+  <text x="342" y="169" class="small">8762</text>
+
+  <rect x="292" y="338" width="150" height="62" rx="15" class="infra"/>
+  <text x="336" y="365" class="label">Eureka</text>
+  <text x="318" y="385" class="small">Discovery 8761</text>
+
+  <rect x="535" y="118" width="420" height="236" rx="20" fill="#fffef7" stroke="#eab308" stroke-width="2"/>
+  <text x="558" y="148" class="label">Domain Servisleri</text>
+  <rect x="558" y="174" width="110" height="54" rx="12" class="service"/><text x="590" y="207" class="small">User</text>
+  <rect x="690" y="174" width="110" height="54" rx="12" class="service"/><text x="720" y="207" class="small">Product</text>
+  <rect x="822" y="174" width="110" height="54" rx="12" class="service"/><text x="857" y="207" class="small">Cart</text>
+  <rect x="558" y="258" width="110" height="54" rx="12" class="service"/><text x="590" y="291" class="small">Order</text>
+  <rect x="690" y="258" width="110" height="54" rx="12" class="service"/><text x="718" y="291" class="small">Payment</text>
+  <rect x="822" y="258" width="110" height="54" rx="12" class="service"/><text x="838" y="291" class="small">Notification</text>
+
+  <rect x="1035" y="122" width="150" height="70" rx="16" class="queue"/>
+  <text x="1072" y="152" class="label">RabbitMQ</text>
+  <text x="1062" y="174" class="small">domain events</text>
+
+  <rect x="1035" y="226" width="150" height="70" rx="16" class="db"/>
+  <text x="1072" y="256" class="label">PostgreSQL</text>
+  <text x="1060" y="278" class="small">service databases</text>
+
+  <rect x="1035" y="330" width="150" height="70" rx="16" class="obs"/>
+  <text x="1078" y="360" class="label">Logs</text>
+  <text x="1057" y="382" class="small">Loki / Grafana</text>
+
+  <line x1="220" y1="261" x2="292" y2="261" class="line"/>
+  <line x1="442" y1="261" x2="535" y2="236" class="line"/>
+  <line x1="367" y1="222" x2="367" y2="184" class="soft"/>
+  <line x1="367" y1="300" x2="367" y2="338" class="soft"/>
+  <line x1="955" y1="196" x2="1035" y2="157" class="event"/>
+  <line x1="955" y1="260" x2="1035" y2="261" class="line"/>
+  <line x1="955" y1="316" x2="1035" y2="365" class="soft"/>
+
+  <text x="82" y="408" class="small">Tüm dış istekler Gateway'den geçer. Servisler merkezi config ve discovery kullanır. Domain olayları RabbitMQ ile, kalıcı veri PostgreSQL ile yönetilir.</text>
+</svg>

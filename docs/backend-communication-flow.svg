@@ -1,0 +1,30 @@
+<svg width="1280" height="500" viewBox="0 0 1280 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#334155"/></marker>
+    <style>
+      .title{font:700 26px Arial,sans-serif;fill:#0f172a}.label{font:700 17px Arial,sans-serif;fill:#1e293b}.small{font:500 13px Arial,sans-serif;fill:#475569}.panel{fill:#fff;stroke:#0f172a;stroke-width:2}.svc{fill:#fffdf2;stroke:#eab308;stroke-width:2.5}.sync{fill:#eff6ff;stroke:#3b82f6;stroke-width:2.5}.eventBox{fill:#fef2f2;stroke:#ef4444;stroke-width:2.5}.queue{fill:#f5f3ff;stroke:#7c3aed;stroke-width:2.5}.blue{stroke:#2563eb;stroke-width:2.8;marker-end:url(#arrow)}.red{stroke:#ef4444;stroke-width:2.8;stroke-dasharray:8 7;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1280" height="500" fill="#fff"/>
+  <text x="44" y="48" class="title">Senkron ve Asenkron İletişim</text>
+  <rect x="42" y="82" width="1196" height="330" rx="24" class="panel"/>
+  <rect x="96" y="214" width="140" height="72" rx="16" class="svc"/><text x="135" y="244" class="label">Order</text><text x="119" y="266" class="small">checkout owner</text>
+
+  <rect x="350" y="130" width="170" height="72" rx="16" class="sync"/><text x="390" y="160" class="label">REST / Feign</text><text x="374" y="182" class="small">anlık veri okuma</text>
+  <rect x="650" y="100" width="140" height="60" rx="14" class="svc"/><text x="690" y="136" class="small">Cart</text>
+  <rect x="650" y="180" width="140" height="60" rx="14" class="svc"/><text x="676" y="216" class="small">Product</text>
+
+  <rect x="350" y="302" width="170" height="72" rx="16" class="eventBox"/><text x="382" y="332" class="label">Domain Event</text><text x="377" y="354" class="small">saga / telafi süreci</text>
+  <rect x="650" y="302" width="140" height="72" rx="16" class="queue"/><text x="688" y="332" class="label">RabbitMQ</text><text x="673" y="354" class="small">exchange</text>
+  <rect x="920" y="250" width="150" height="60" rx="14" class="svc"/><text x="962" y="286" class="small">Payment</text>
+  <rect x="920" y="330" width="150" height="60" rx="14" class="svc"/><text x="949" y="366" class="small">Notification</text>
+
+  <path d="M236 238 C280 180 305 166 350 166" class="blue"/>
+  <line x1="520" y1="156" x2="650" y2="130" class="blue"/>
+  <line x1="520" y1="176" x2="650" y2="210" class="blue"/>
+  <path d="M236 270 C280 330 305 338 350 338" class="red"/>
+  <line x1="520" y1="338" x2="650" y2="338" class="red"/>
+  <line x1="790" y1="330" x2="920" y2="280" class="red"/>
+  <line x1="790" y1="350" x2="920" y2="360" class="red"/>
+  <text x="88" y="390" class="small">Okuma/doğrulama için senkron çağrı, süreç yayılımı ve telafi için event kullanılır.</text>
+</svg>

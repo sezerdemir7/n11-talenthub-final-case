@@ -1,0 +1,32 @@
+<svg width="1280" height="620" viewBox="0 0 1280 620" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#334155"/></marker>
+    <style>.title{font:700 26px Arial,sans-serif;fill:#0f172a}.label{font:700 16px Arial,sans-serif;fill:#1e293b}.small{font:500 13px Arial,sans-serif;fill:#475569}.box{fill:#fff;stroke:#0f172a;stroke-width:2}.svc{fill:#fffdf2;stroke:#eab308;stroke-width:2.5}.queue{fill:#f5f3ff;stroke:#7c3aed;stroke-width:2.5}.fail{fill:#fef2f2;stroke:#ef4444;stroke-width:2.5}.ok{fill:#f0fdf4;stroke:#16a34a;stroke-width:2.5}.line{stroke:#334155;stroke-width:2.4;marker-end:url(#arrow)}.event{stroke:#ef4444;stroke-width:2.7;stroke-dasharray:8 7;marker-end:url(#arrow)}.green{stroke:#16a34a;stroke-width:2.7;marker-end:url(#arrow)}</style>
+  </defs>
+  <rect width="1280" height="620" fill="#fff"/>
+  <text x="44" y="48" class="title">Telafi ve Satıcı Durum Event Akışları</text>
+  <rect x="42" y="82" width="1196" height="466" rx="24" class="box"/>
+
+  <text x="86" y="128" class="label">Ödeme başarısızlığı</text>
+  <rect x="86" y="152" width="148" height="66" rx="14" class="fail"/><text x="102" y="181" class="label">PaymentFailed</text><text x="114" y="201" class="small">payment-service</text>
+  <rect x="316" y="152" width="128" height="66" rx="14" class="queue"/><text x="344" y="192" class="label">RabbitMQ</text>
+  <rect x="524" y="112" width="150" height="66" rx="14" class="svc"/><text x="552" y="142" class="label">Order</text><text x="542" y="162" class="small">status failed</text>
+  <rect x="524" y="196" width="150" height="66" rx="14" class="svc"/><text x="548" y="226" class="label">Product</text><text x="540" y="246" class="small">release stock</text>
+  <line x1="234" y1="185" x2="316" y2="185" class="event"/><line x1="444" y1="178" x2="524" y2="145" class="event"/><line x1="444" y1="194" x2="524" y2="229" class="event"/>
+
+  <text x="86" y="330" class="label">Sipariş iptali</text>
+  <rect x="86" y="354" width="148" height="66" rx="14" class="svc"/><text x="111" y="383" class="label">Order</text><text x="112" y="403" class="small">cancel order</text>
+  <rect x="316" y="354" width="128" height="66" rx="14" class="queue"/><text x="344" y="394" class="label">RabbitMQ</text>
+  <rect x="524" y="314" width="150" height="66" rx="14" class="svc"/><text x="548" y="344" class="label">Product</text><text x="540" y="364" class="small">restore stock</text>
+  <rect x="524" y="398" width="150" height="66" rx="14" class="svc"/><text x="548" y="428" class="label">Payment</text><text x="540" y="448" class="small">refund/cancel</text>
+  <line x1="234" y1="387" x2="316" y2="387" class="event"/><line x1="444" y1="378" x2="524" y2="347" class="event"/><line x1="444" y1="395" x2="524" y2="431" class="event"/>
+
+  <text x="770" y="128" class="label">Satıcı onay/suspend</text>
+  <rect x="770" y="152" width="148" height="66" rx="14" class="svc"/><text x="813" y="181" class="label">User</text><text x="796" y="201" class="small">admin action</text>
+  <rect x="984" y="152" width="128" height="66" rx="14" class="queue"/><text x="1012" y="192" class="label">RabbitMQ</text>
+  <rect x="770" y="260" width="148" height="66" rx="14" class="ok"/><text x="792" y="289" class="label">Activated</text><text x="794" y="309" class="small">seller approved</text>
+  <rect x="984" y="260" width="148" height="66" rx="14" class="fail"/><text x="1002" y="289" class="label">Suspended</text><text x="1004" y="309" class="small">seller blocked</text>
+  <rect x="876" y="394" width="150" height="66" rx="14" class="svc"/><text x="900" y="424" class="label">Product</text><text x="892" y="444" class="small">toggle products</text>
+  <line x1="918" y1="185" x2="984" y2="185" class="event"/><line x1="1048" y1="218" x2="844" y2="260" class="green"/><line x1="1048" y1="218" x2="1058" y2="260" class="event"/><line x1="844" y1="326" x2="912" y2="394" class="green"/><line x1="1058" y1="326" x2="992" y2="394" class="event"/>
+  <text x="939" y="502" class="small">Product service satıcı ürünlerini aktif/pasif yönetir</text>
+</svg>

@@ -1,0 +1,182 @@
+<svg width="1400" height="820" viewBox="0 0 1400 820" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10Z" fill="#222"/>
+    </marker>
+    <marker id="redArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10Z" fill="#ef4444"/>
+    </marker>
+    <style>
+      .title{font:700 30px Arial,sans-serif;fill:#0f172a}
+      .small{font:500 14px Arial,sans-serif;fill:#475569}
+      .label{font:700 16px Arial,sans-serif;fill:#1f2937}
+      .hand{font:600 15px "Comic Sans MS","Segoe Print",Arial,sans-serif;fill:#ef4444}
+      .handDark{font:600 15px "Comic Sans MS","Segoe Print",Arial,sans-serif;fill:#334155}
+      .panel{fill:#fff;stroke:#111;stroke-width:2.2}
+      .service{fill:#fffef2;stroke:#facc15;stroke-width:2.6}
+      .infra{fill:#f8fafc;stroke:#38bdf8;stroke-width:2.4}
+      .db{fill:#dbeafe;stroke:#2563eb;stroke-width:2.6}
+      .queue{fill:#f5f3ff;stroke:#0ea5e9;stroke-width:2.6}
+      .obs{fill:#f0fdf4;stroke:#16a34a;stroke-width:2.4}
+      .external{fill:#fff7ed;stroke:#fb923c;stroke-width:2.4}
+      .line{stroke:#222;stroke-width:2.2;fill:none;marker-end:url(#arrow)}
+      .both{stroke:#222;stroke-width:2.2;fill:none;marker-start:url(#arrow);marker-end:url(#arrow)}
+      .event{stroke:#ef4444;stroke-width:2.4;fill:none;stroke-dasharray:7 6;marker-end:url(#redArrow)}
+      .log{stroke:#16a34a;stroke-width:2.2;fill:none;stroke-dasharray:6 6;marker-end:url(#arrow)}
+    </style>
+  </defs>
+
+  <rect width="1400" height="820" fill="#fff"/>
+  <line x1="34" y1="10" x2="1366" y2="10" stroke="#cbd5e1"/>
+  <text x="34" y="70" class="title">Process Chart of All Backend Services</text>
+
+  <!-- Frontend browser icon -->
+  <g>
+    <rect x="74" y="315" width="112" height="104" rx="8" fill="#fff" stroke="#000" stroke-width="7"/>
+    <rect x="74" y="315" width="112" height="28" rx="8" fill="#e5e7eb" stroke="#000" stroke-width="0"/>
+    <circle cx="105" cy="329" r="3.5" fill="#000"/>
+    <circle cx="124" cy="329" r="3.5" fill="#000"/>
+    <circle cx="143" cy="329" r="3.5" fill="#000"/>
+    <text x="98" y="385" font-family="monospace" font-size="42" font-weight="800" fill="#000">&lt;/&gt;</text>
+    <text x="91" y="445" class="handDark">Frontend</text>
+  </g>
+
+  <path d="M224 358 C260 350 284 350 318 358" class="both"/>
+  <text x="235" y="335" class="handDark">HTTP requests</text>
+
+  <!-- Main backend/docker frame -->
+  <rect x="350" y="110" width="948" height="610" rx="24" class="panel"/>
+  <text x="1192" y="160" font-family="Arial,sans-serif" font-size="26" font-weight="800" fill="#0ea5e9">Docker</text>
+  <path d="M1210 176 h68 v16 h-68z" fill="#38bdf8"/>
+  <path d="M1220 158h12v12h-12z M1236 158h12v12h-12z M1252 158h12v12h-12z M1236 142h12v12h-12z M1252 142h12v12h-12z" fill="#0ea5e9"/>
+  <path d="M1204 192 c20 22 58 21 78 0 c-22 8-56 8-78 0z" fill="#0284c7"/>
+
+  <!-- Infra left -->
+  <rect x="390" y="145" width="138" height="66" rx="14" class="infra"/>
+  <text x="420" y="173" class="label">Config</text>
+  <text x="413" y="194" class="small">Server 8762</text>
+
+  <rect x="390" y="230" width="138" height="66" rx="14" class="infra"/>
+  <text x="420" y="258" class="label">Eureka</text>
+  <text x="402" y="279" class="small">Discovery 8761</text>
+
+  <rect x="390" y="332" width="138" height="78" rx="15" class="infra"/>
+  <text x="415" y="365" class="label">API Gateway</text>
+  <text x="428" y="388" class="small">8763</text>
+
+  <!-- Service column -->
+  <rect x="612" y="145" width="145" height="76" rx="16" class="service"/>
+  <text x="657" y="177" class="label">User</text>
+  <text x="638" y="199" class="small">Auth / Seller</text>
+
+  <rect x="612" y="250" width="145" height="76" rx="16" class="service"/>
+  <text x="641" y="282" class="label">Product</text>
+  <text x="639" y="304" class="small">Catalog / Stock</text>
+
+  <rect x="612" y="355" width="145" height="76" rx="16" class="service"/>
+  <text x="656" y="387" class="label">Cart</text>
+  <text x="650" y="409" class="small">Basket</text>
+
+  <rect x="612" y="460" width="145" height="76" rx="16" class="service"/>
+  <text x="649" y="492" class="label">Order</text>
+  <text x="644" y="514" class="small">Checkout</text>
+
+  <rect x="612" y="565" width="145" height="76" rx="16" class="service"/>
+  <text x="639" y="597" class="label">Payment</text>
+  <text x="650" y="619" class="small">Iyzico</text>
+
+  <rect x="820" y="460" width="160" height="76" rx="16" class="service"/>
+  <text x="842" y="492" class="label">Notification</text>
+  <text x="866" y="514" class="small">WebSocket</text>
+
+  <!-- DB top -->
+  <g>
+    <ellipse cx="880" cy="160" rx="56" ry="18" class="db"/>
+    <rect x="824" y="160" width="112" height="58" fill="#dbeafe" stroke="#2563eb" stroke-width="2.6"/>
+    <ellipse cx="880" cy="218" rx="56" ry="18" class="db"/>
+    <text x="838" y="254" class="handDark">PostgreSQL</text>
+    <text x="828" y="275" class="small">service databases</text>
+  </g>
+
+  <!-- RabbitMQ center right -->
+  <rect x="835" y="290" width="86" height="300" rx="22" class="queue"/>
+  <text x="845" y="440" class="label" transform="rotate(-90 845 440)">RabbitMQ</text>
+  <text x="808" y="626" class="handDark">saga exchange</text>
+
+  <!-- Logger -->
+  <rect x="1035" y="348" width="98" height="88" rx="17" class="obs"/>
+  <text x="1058" y="386" class="label">Logs</text>
+  <text x="1053" y="409" class="small">Promtail</text>
+
+  <g>
+    <ellipse cx="1210" cy="360" rx="45" ry="15" class="db"/>
+    <rect x="1165" y="360" width="90" height="48" fill="#dbeafe" stroke="#2563eb" stroke-width="2.6"/>
+    <ellipse cx="1210" cy="408" rx="45" ry="15" class="db"/>
+    <text x="1182" y="444" class="handDark">Loki</text>
+  </g>
+
+  <rect x="1135" y="535" width="118" height="66" rx="15" class="obs"/>
+  <text x="1164" y="564" class="label">Grafana</text>
+  <text x="1174" y="585" class="small">3000</text>
+
+  <!-- External -->
+  <rect x="1018" y="145" width="110" height="62" rx="15" class="external"/>
+  <text x="1055" y="172" class="label">S3</text>
+  <text x="1038" y="193" class="small">images</text>
+
+  <rect x="1018" y="620" width="110" height="62" rx="15" class="external"/>
+  <text x="1046" y="647" class="label">Iyzico</text>
+  <text x="1042" y="668" class="small">payment</text>
+
+  <!-- Gateway to services -->
+  <path d="M528 371 C568 230 570 184 612 183" class="line"/>
+  <path d="M528 371 C568 286 576 288 612 288" class="line"/>
+  <path d="M528 371 C565 392 576 393 612 393" class="line"/>
+  <path d="M528 371 C570 485 575 498 612 498" class="line"/>
+  <path d="M528 371 C565 575 575 603 612 603" class="line"/>
+  <text x="426" y="445" class="hand">JWT check</text>
+  <text x="426" y="466" class="hand">route to service</text>
+
+  <!-- config/eureka arrows -->
+  <path d="M459 332 L459 296" class="line"/>
+  <path d="M459 332 C455 265 455 225 459 211" class="line"/>
+
+  <!-- DB arrows -->
+  <path d="M757 183 C795 173 803 171 824 171" class="line"/>
+  <path d="M757 288 C793 238 807 213 824 205" class="line"/>
+  <path d="M757 393 C792 318 805 255 824 220" class="line"/>
+  <path d="M757 498 C798 390 807 285 824 230" class="line"/>
+  <path d="M757 603 C806 455 818 304 824 238" class="line"/>
+  <text x="775" y="126" class="hand">CRUD and</text>
+  <text x="775" y="146" class="hand">domain data</text>
+
+  <!-- Events -->
+  <path d="M757 183 C792 238 810 286 835 314" class="event"/>
+  <path d="M757 288 C792 304 810 318 835 338" class="event"/>
+  <path d="M757 498 C795 454 811 418 835 390" class="event"/>
+  <path d="M757 603 C795 526 812 468 835 430" class="event"/>
+  <path d="M921 392 C966 392 995 392 1035 392" class="event"/>
+  <text x="702" y="350" class="hand">publish / consume</text>
+  <text x="702" y="370" class="hand">order, stock, payment</text>
+  <text x="702" y="390" class="hand">seller events</text>
+
+  <!-- Notification -->
+  <path d="M921 496 C961 468 998 434 1035 410" class="event"/>
+  <path d="M980 498 C1036 506 1088 545 1135 568" class="line"/>
+
+  <!-- Logs -->
+  <path d="M757 183 C868 236 942 306 1035 374" class="log"/>
+  <path d="M757 288 C864 306 944 345 1035 388" class="log"/>
+  <path d="M757 498 C858 466 944 425 1035 402" class="log"/>
+  <path d="M1133 392 C1150 392 1155 392 1165 392" class="line"/>
+  <path d="M1210 423 C1210 470 1210 500 1194 535" class="line"/>
+  <text x="950" y="315" class="hand">central logs</text>
+  <text x="950" y="335" class="hand">correlation id</text>
+
+  <!-- External arrows -->
+  <path d="M757 288 C874 244 945 195 1018 176" class="line"/>
+  <path d="M757 603 C862 633 945 651 1018 651" class="line"/>
+
+  <!-- Frontend to gateway line reaches panel -->
+  <path d="M318 358 C333 358 337 358 350 358" class="line"/>
+</svg>

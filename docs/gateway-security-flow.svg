@@ -1,0 +1,25 @@
+<svg width="1280" height="500" viewBox="0 0 1280 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#334155"/></marker>
+    <style>
+      .title{font:700 26px Arial,sans-serif;fill:#0f172a}.label{font:700 17px Arial,sans-serif;fill:#1e293b}.small{font:500 13px Arial,sans-serif;fill:#475569}.panel{fill:#fff;stroke:#0f172a;stroke-width:2}.node{fill:#f8fafc;stroke:#64748b;stroke-width:2.4}.gw{fill:#ecfeff;stroke:#06b6d4;stroke-width:2.6}.ok{fill:#f0fdf4;stroke:#16a34a;stroke-width:2.5}.bad{fill:#fef2f2;stroke:#ef4444;stroke-width:2.5}.line{stroke:#334155;stroke-width:2.4;marker-end:url(#arrow)}.green{stroke:#16a34a;stroke-width:2.7;marker-end:url(#arrow)}.red{stroke:#ef4444;stroke-width:2.7;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1280" height="500" fill="#fff"/>
+  <text x="44" y="48" class="title">Gateway Güvenlik Akışı</text>
+  <rect x="42" y="82" width="1196" height="330" rx="24" class="panel"/>
+  <rect x="90" y="220" width="140" height="72" rx="16" class="node"/><text x="127" y="250" class="label">Client</text><text x="111" y="272" class="small">HTTP request</text>
+  <rect x="300" y="220" width="150" height="72" rx="16" class="gw"/><text x="326" y="250" class="label">Gateway</text><text x="318" y="272" class="small">public path check</text>
+  <rect x="530" y="120" width="160" height="72" rx="16" class="ok"/><text x="565" y="150" class="label">Public API</text><text x="552" y="172" class="small">token gerekmez</text>
+  <rect x="530" y="310" width="160" height="72" rx="16" class="node"/><text x="566" y="340" class="label">JWT Check</text><text x="553" y="362" class="small">signature + claims</text>
+  <rect x="780" y="310" width="170" height="72" rx="16" class="ok"/><text x="814" y="340" class="label">User Headers</text><text x="802" y="362" class="small">X-User-Id, Roles</text>
+  <rect x="1028" y="220" width="150" height="72" rx="16" class="ok"/><text x="1066" y="250" class="label">Service</text><text x="1053" y="272" class="small">business logic</text>
+  <rect x="780" y="120" width="170" height="72" rx="16" class="bad"/><text x="837" y="150" class="label">401</text><text x="802" y="172" class="small">missing / invalid token</text>
+  <line x1="230" y1="256" x2="300" y2="256" class="line"/>
+  <line x1="450" y1="238" x2="530" y2="156" class="green"/>
+  <line x1="450" y1="276" x2="530" y2="346" class="line"/>
+  <line x1="690" y1="156" x2="1028" y2="238" class="green"/>
+  <line x1="690" y1="346" x2="780" y2="346" class="green"/>
+  <line x1="950" y1="346" x2="1028" y2="274" class="green"/>
+  <line x1="610" y1="310" x2="780" y2="178" class="red"/>
+</svg>
